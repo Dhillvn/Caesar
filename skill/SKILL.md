@@ -31,6 +31,101 @@ the URL. Two roles:
 
 Only one primary at a time.
 
+## Starting a session
+
+`/caesar <map-url>` is the only door. There is no `resume` variant: there is no state
+file, so every session is a cold start by construction — no picture to resume, only
+truth to re-read. A crashed session and a fresh one run the same commands against the
+same truth; only what the sweep *finds* differs.
+
+**Four reads, in this order, then stop:**
+
+1. **The map body** — `gh issue view <n> --repo <owner/repo> --json body`. Always, and
+   first, so everything after it is judged against the Destination. It is the entire
+   corpus behind *you are the smell test*, and it carries the per-map config overrides.
+2. **`scripts/frontier.ps1 -MapUrl <url>`**
+3. **`git worktree list`** — unconditionally, not only when a claimed row appears. The
+   orphan case below is visible only from the disk side.
+4. **`gh pr list`** — an open PR awaiting the merge word is the one piece of prior state
+   nothing else surfaces. Skip it and a decision of Raj's is silently dropped forever.
+
+**No ticket bodies.** Not one, until you have picked a ticket. That is the context killer
+at 19+ children.
+
+Reads 2 and 4 are GitHub and portable; read 3 and the run logs are machine-bound.
+
+### Reconciling GitHub against the disk
+
+**A grill session never creates a worktree** — only spawned AFK agents do. So "claimed on
+GitHub, nothing on disk" is the *healthy* state of every live HITL ticket. Disk evidence
+carries information only for AFK tickets.
+
+- **Claimed HITL — never touch it, and say nothing.** You cannot tell a live parallel
+  grill from one that died mid-conversation; no evidence separates them, stealing it
+  corrupts a conversation the parallel roles exist for, and reporting it every session is
+  a fixed cost to surface the healthy case. One escape: **if the frontier comes back
+  empty and claimed tickets exist**, name them and ask — "nothing takeable; #30 is
+  claimed, is a session live on it?". No timeout, no staleness heuristic. The failure
+  this guards — a crashed grill leaving a ticket assigned forever, shrinking the frontier
+  silently — only bites when nothing else is takeable.
+- **Claimed AFK with nothing on disk — check the GitHub artifact, not the disk**, then
+  fall into the failure rules above. Resolution comment but ticket still open →
+  bookkeeping half-done, finish the mechanical remainder yourself. Branch or PR but no
+  comment → *work* half-done, flag it. Nothing at all → nothing ran, re-fire under the
+  retry ceiling. The attempt count is a ticket comment precisely so a session with no
+  local logs can count it — **no new machinery**.
+
+**Assumption, load-bearing and stated: one machine, one checkout per repo.** You are
+always invoked from inside the map's repo and every spawned worktree lives there, so
+`git worktree list` sees every agent on this map whoever spawned it — which is what makes
+"no worktree" mean *nothing running* rather than *running where I cannot see*. A second
+machine or checkout breaks the inference.
+
+### Orphan worktrees
+
+`spawn-ticket-agent.ps1` names every worktree `ticket-<number>-<random>`, so provenance is
+stamped into the folder name. **Delete only what you can prove you created and that holds
+nothing.**
+
+| Worktree | Action |
+|---|---|
+| `ticket-N-*`, ticket N closed, teardown succeeds | delete **silently** — one correct outcome, zero information for Raj |
+| `ticket-N-*`, ticket N closed, teardown refuses (dirty/unpushed) | report **once, with the resolution attached** |
+| `ticket-N-*`, ticket N open | not an orphan — that is the live-agent case |
+| anything not `ticket-N-*` | **never delete.** Could be Raj's own. Report once and ask |
+
+### What the first turn says
+
+**It ends with the pick, not the table.** He typed `/caesar <url>` to get work moving, and
+six facts × every open ticket in front of that is a tollbooth paid every session. The
+table stays pull-only — it is one word away, "status".
+
+In order, one line each: **only what needs Raj** — a flag, a PR awaiting the word, a dirty
+leftover, the empty-frontier question — and *the whole section absent when there is
+nothing*; **what you already fired**, as a receipt for actions taken before he could
+object; **what you are taking and why**, one sentence, so his override still works; then
+the first grill question. On a clean session that is about four lines.
+
+### Grill-only starts differently
+
+**Grill-only reads two things: the map body and `frontier.ps1`.** No `git worktree list`
+and no teardown — it spawns nothing, so it owns nothing on disk, and two grill-only
+sessions auto-deleting orphans is a race on the same folders. No `gh pr list` and **no PR
+surfacing: the primary is the sole surfacer of PRs** — two sessions independently asking
+for the word on the same PR is how it gets double-merged, or worn into a rubber stamp.
+
+If the frontier holds only AFK tickets, grill-only has nothing it is permitted to do. Say
+exactly that — "nothing here for me, this needs a primary" — and stop, rather than sitting
+idle for a reason Raj cannot see.
+
+### Why this is prose and not a script
+
+A script is frozen when its correctness is a flag set that improvisation can silently
+drop. Every dangerous command here is already frozen; the three additions are flagless
+one-liners, and the reconciliation is judgment by definition. A `startup.ps1` would close
+no silent-failure mode. It earns one only if dogfooding shows the startup being skipped or
+costing visible context.
+
 ## The loop
 
 1. **Sweep.** `scripts/frontier.ps1 -MapUrl <url>`. One GraphQL call, one rate-limit
@@ -245,8 +340,6 @@ tracker himself: report state in chat, and act on his sentence.
 
 Deliberately absent, and tracked as open tickets on Caesar's own map:
 
-- **Session startup and rehydration** — what you do on your first turn to rebuild the
-  picture, including a ticket assigned to Raj with no live process behind it.
 - **Charting new maps** — whether you may run `/wayfinder` in charting mode, or only
   work existing maps. Assume only existing maps until decided.
 - **Veto after the fact** — Raj disagreeing with a decision already commented, closed
