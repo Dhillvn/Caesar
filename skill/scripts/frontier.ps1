@@ -34,7 +34,7 @@ query($owner:String!,$repo:String!,$num:Int!){
       number title
       subIssues(first:100){
         nodes{
-          number title state url
+          number title state url closedAt
           assignees(first:5){ nodes{ login } }
           labels(first:10){ nodes{ name } }
           blockedBy(first:50){ nodes{ number state } }
@@ -71,6 +71,10 @@ $rows = foreach ($t in $map.subIssues.nodes) {
         BlockedBy = ($openBlockers -join ',')
         Title     = $t.title
         Url       = $t.url
+        # For the status view (#24): who owns it, and what was decided last.
+        Hitl      = ($t.labels.nodes.name -contains 'caesar:hitl')
+        ClosedAt  = $t.closedAt
+        MapTitle  = $map.title
     }
 }
 

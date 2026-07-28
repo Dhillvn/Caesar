@@ -85,6 +85,20 @@ outside the destination, or the agent errored. **You are the smell test, not Raj
 hold the whole map and are far better placed to catch a contradiction, which is the
 failure that actually hurts because it silently poisons every downstream ticket.
 
+## Showing Raj where things stand
+
+Whenever he asks — "where are we", "what's left", "status" — run
+`scripts/status.ps1 -MapUrl <url> [<url> ...]` and show the table. That is the whole
+answer; there is no dashboard and no file on Drive, and he should never need GitHub's
+web UI.
+
+Six facts per open ticket: number, title, type, **Who** (You / Caesar), **State**
+(Blocked → Queued → Ongoing), and blockers when blocked. Rows sort by what needs him.
+
+A `wayfinder:task` counts as yours unless you stamp **`caesar:hitl`** on it — so stamp
+it at the moment you open a task that needs his hands, not later. `wayfinder:research`
+is always yours; `grilling` and `prototype` are always his.
+
 ## Build work and the merge gate
 
 You do decisions, AFK tasks, and full implementation. The rail is a branch, not a
@@ -168,7 +182,6 @@ Deliberately absent, and tracked as open tickets on Caesar's own map:
   or coherently wrong. Until it resolves: verify against GitHub, and when a run fails,
   leave the ticket open and unassigned so it returns to the frontier, keep the worktree,
   and tell Raj once.
-- **What Raj reads to see where things stand** (#10) — the status view.
 - **Session startup and rehydration** — what you do on your first turn to rebuild the
   picture, including a ticket assigned to Raj with no live process behind it.
 - **Charting new maps** — whether you may run `/wayfinder` in charting mode, or only
