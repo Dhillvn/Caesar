@@ -365,6 +365,32 @@ hard 400, not a 412, so there is no optimistic concurrency to lean on. Every map
 write is **read-verify-retry**: re-read, write, re-read to confirm, retry on mismatch.
 Parallel grill-only sessions make this load-bearing, not theoretical.
 
+**Never compose that by hand. `scripts/map-body.ps1` is the only way you touch the map
+body**, in two steps:
+
+```
+.\map-body.ps1 -MapUrl <url>                      # fetch -> a file, and that file is the backup
+.\map-body.ps1 -MapUrl <url> -BodyFile <path>     # edit the file, then write it back
+```
+
+Edit the **file** on disk between the two calls. The body must never become a PowerShell
+value: a native command's output is captured as an *array of lines*, and one wrong join
+flattens the whole map to a single line that GitHub accepts without complaint. That is
+how 25 KB of decisions were destroyed in #36, and **GitHub keeps no revision history for
+an API body edit** — the pre-write copy under `.claude/caesar-runs/map-backups/` is the
+only undo that exists.
+
+The script verifies **structure, not phrasing**: line, heading and decision-bullet
+counts, every previously-present ticket link, and a byte floor — checked before the
+write, so a bad edit is refused on disk rather than repaired on GitHub. A phrase check
+("is the stale line gone?") passes on a destroyed map; that is exactly what it did.
+
+Read the verdict it returns. `Written=$false` with `refused before writing` means nothing
+happened and your file is wrong — fix the file. `WRITTEN BUT DAMAGED` means GitHub stored
+something other than what you sent: run the `Restore` command it prints, immediately.
+`-AllowShrink` exists for a section you meant to delete; needing it is a claim you are
+making, so say so in chat.
+
 ## Register
 
 Raj's internal register is caveman mode — terse, no filler. Code, commits and PRs stay
