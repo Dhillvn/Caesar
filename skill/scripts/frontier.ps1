@@ -56,10 +56,15 @@ $rows = foreach ($t in $map.subIssues.nodes) {
     # The one line this script exists for. See .DESCRIPTION.
     $openBlockers = @($t.blockedBy.nodes | Where-Object { $_.state -eq 'OPEN' } | ForEach-Object { $_.number })
     $assignees = @($t.assignees.nodes | ForEach-Object { $_.login })
+    $labels = @($t.labels.nodes | ForEach-Object { $_.name })
     $type = ($t.labels.nodes | Where-Object { $_.name -like 'wayfinder:*' } | Select-Object -First 1).name -replace '^wayfinder:', ''
 
     if ($t.state -ne 'OPEN') { $status = 'closed' }
     elseif ($openBlockers.Count -gt 0) { $status = 'blocked' }
+    # Caesar stopped on it (#17). Ahead of `claimed` so the flag survives an assignment
+    # being lost: without this the sweep hands every failure straight back to the next
+    # session, which re-fires it, silently defeating the one-retry ceiling.
+    elseif ($labels -contains 'caesar:needs-raj') { $status = 'flagged' }
     elseif ($assignees.Count -gt 0) { $status = 'claimed' }
     else { $status = 'frontier' }
 

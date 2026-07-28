@@ -48,6 +48,7 @@ function Get-Who($Row) {
 # what needs you, then what is moving, then what is next, then what is stuck
 function Get-Rank($Who, $State) {
     switch ("$Who/$State") {
+        'You/Needs you'  { -1 }
         'You/Queued'     { 0 }
         'You/Ongoing'    { 1 }
         'Caesar/Ongoing' { 2 }
@@ -83,8 +84,10 @@ foreach ($url in $MapUrl) {
     $rows = @(& $sweepScript -MapUrl $url)
     $done = @($rows | Where-Object { $_.Status -eq 'closed' } | Sort-Object ClosedAt)
     $open = @($rows | Where-Object { $_.Status -ne 'closed' } | ForEach-Object {
-        $state = switch ($_.Status) { 'blocked' { 'Blocked' } 'claimed' { 'Ongoing' } default { 'Queued' } }
-        $who = Get-Who $_
+        $state = switch ($_.Status) { 'blocked' { 'Blocked' } 'flagged' { 'Needs you' } 'claimed' { 'Ongoing' } default { 'Queued' } }
+        # A flagged ticket (#17) is back on Raj whatever its type says, and must not
+        # read as Queued - Queued means takeable. It also stops counting as an agent slot.
+        $who = if ($_.Status -eq 'flagged') { 'You' } else { Get-Who $_ }
         [pscustomobject]@{
             Number = $_.Number; Title = $_.Title; Type = $_.Type
             Who = $who; State = $state; BlockedBy = $_.BlockedBy
