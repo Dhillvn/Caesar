@@ -4,6 +4,17 @@ Resolves [#15](https://github.com/Dhillvn/caesar/issues/15). Measured 2026-07-28
 `2.1.220`, Windows 11, native (no WSL, no tmux). All runs used `--model sonnet` so the token
 counts are comparable; dollar figures are Sonnet 5 rates.
 
+> **Everything Caesar does runs on Raj's Claude Max subscription. Never API credits.** This is a
+> standing rule for the whole effort, and it changes how to read this page. Verified at
+> measurement time: `claude auth status` reports `authMethod: claude.ai`, `apiProvider:
+> firstParty`, `subscriptionType: max`, with no `ANTHROPIC_API_KEY` in the environment. The
+> background session's own status line confirmed it from the other side, reporting
+> `5h: 36% used, resets Tue 23:10 | 7d: 5% used` — subscription rate-limit windows, not a dollar
+> meter. **No run on this page was billed to an API account.** `total_cost_usd` is a figure the
+> CLI computes from token counts and reports regardless of auth mode; treat every dollar below as
+> a notional token-cost equivalent, useful only for ranking. See
+> [What it actually costs on a subscription](#what-it-actually-costs-on-a-subscription).
+
 ## Method
 
 One fixed, ticket-shaped job, run identically in every substrate from
@@ -39,7 +50,9 @@ $0.002, which is what makes the parent/subagent split below trustworthy. The rat
 | **Headless `claude -p`** | $0.295 | **$0.139** | 12-14s | nothing, if stdout is redirected to a file |
 | **Background `claude --bg`** | $0.361 | **$0.225** | 18-20s, plus 1.4s to spawn | nothing — the parent never sees it |
 
-Warm-state ratio: **subagent 1.00x · headless 1.34x · background 2.16x.**
+Warm-state ratio *by dollar*: **subagent 1.00x · headless 1.34x · background 2.16x.**
+By *tokens on a subscription*, which is what actually applies here: **headless 1.00x · subagent
+1.06x · background 1.57x.**
 
 Raw numbers, deduplicated by cache-token signature (the transcript writes each assistant message
 twice, once partial and once final):
@@ -56,9 +69,40 @@ twice, once partial and once final):
 | c1 | background, cold | 51,503 (1h) | 139,306 | 646 | 0.3605 | 19.6s |
 | c2 | background, warm | 27,152 (1h) | 166,802 | 771 | 0.2245 | 18.2s |
 
-**The subagent is cheapest, and the margin is small.** Roughly 4/3 the price to go headless and
-just over 2x to go background. At these numbers the substrate choice is worth about $0.03-0.12
-per ticket, so it should be decided on the properties below, not on price.
+**On the dollar figures the subagent is cheapest, and the margin is small** — roughly 4/3 to go
+headless and just over 2x to go background, a spread of $0.03-0.12 per ticket. But see the next
+section: on a subscription that ranking does not survive, and the subagent's lead turns out to be
+an artefact of cache pricing. Either way the conclusion is the same, and stronger for it: decide
+the substrate on the properties below, not on cost.
+
+## What it actually costs on a subscription
+
+The dollar column above is notional. Nothing here was billed to an API account — every run went
+against the Max subscription, so what a ticket really consumes is **tokens against the 5-hour and
+7-day rate-limit windows**. Counting that instead:
+
+| Substrate | Tokens per warm ticket | vs best |
+|---|---|---|
+| **Headless `claude -p`** | **124,426** | 1.00x |
+| **Subagent** (marginal: child 92,877 + parent's post-return re-read 39,010) | **131,887** | 1.06x |
+| **Background `--bg`** | **194,725** | 1.57x |
+
+**The subagent's price advantage disappears, and slightly reverses.** It was cheapest in dollars
+only because subagents write 5-minute cache at $3.75/M while top-level sessions write 1-hour cache
+at $6.00/M. That is a pricing quirk. In raw tokens the subagent is marginally *worse* than headless
+— it pays for its own preamble and then makes the parent re-read an enlarged context on the next
+turn.
+
+The honest caveat: **how Anthropic meters subscription usage against these windows is not
+documented**, and 82-86% of every run's tokens are cache *reads*, which the price list discounts
+10x. If the rate limiter applies a similar discount, the dollar ranking is the better proxy and
+the subagent leads again; if it counts tokens flat, the table above holds and headless leads. This
+was not something the test could settle.
+
+What survives both readings: **background `--bg` is the most expensive substrate by a clear
+margin** (1.57x on tokens, 2.16x on dollars), and **subagent vs headless is a coin-flip on cost**.
+That makes the case for deciding [#7](https://github.com/Dhillvn/caesar/issues/7) on properties
+stronger, not weaker — cost genuinely cannot separate the two front-runners.
 
 Two things drive the spread. First, **subagents write 5-minute cache and top-level sessions write
 1-hour cache** — verified directly, every subagent message reports its cache creation under
@@ -124,17 +168,20 @@ Findings that matter more than its price:
 
 ## What this means for [#7](https://github.com/Dhillvn/caesar/issues/7)
 
-Cost does not decide it. The spread is $0.03-0.12 a ticket, which will not be the thing Raj
-notices. What the measurements actually argue:
+Cost does not decide it, and on a subscription it decides it even less — subagent and headless are
+within 6% of each other on tokens and swap places depending on how cache reads are metered. What
+the measurements actually argue:
 
-- **Subagents** are cheapest, return a ~75-token summary straight into Caesar's context, and are
-  the only option that needs no plumbing to collect a result. Against them: they die with the
-  parent session (per [#2](https://github.com/Dhillvn/caesar/issues/2)) and their 5m cache never
-  amortises.
-- **Headless `claude -p`** is 1.34x the price and buys a real result object — `is_error`,
+- **Subagents** return a ~75-token summary straight into Caesar's context and are the only option
+  that needs no plumbing to collect a result. Against them: they die with the parent session (per
+  [#2](https://github.com/Dhillvn/caesar/issues/2)), their 5m cache never amortises, and in raw
+  tokens they are slightly *more* expensive than headless, not less.
+- **Headless `claude -p`** is 1.34x the dollar figure but the cheapest in raw tokens, and buys a
+  real result object — `is_error`,
   `total_cost_usd`, `permission_denials`, `session_id` — plus `--max-budget-usd` as a hard cap.
   It writes to the real checkout. This is the only substrate with a structured, parseable outcome.
-- **Background `--bg`** is 2.16x the price and the only one that survives Caesar's session closing,
+- **Background `--bg`** is the most expensive under either metering (1.57x tokens, 2.16x dollars)
+  and the only one that survives Caesar's session closing,
   but it pays for that with no structured result, an unreadable log, and a worktree per ticket that
   Caesar must merge and then clean up. It is the most work to adopt, not the least.
 
