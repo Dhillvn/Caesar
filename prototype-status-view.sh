@@ -71,6 +71,11 @@ table() {
     def cell(s; n): (s|tostring) as $t
       | (if ($t|length) > n then ($t[0:n-1] + "…") else $t end)
       | . + ("                                                            "[0:(n - ([$t|length, n]|min))]);
+    # greedy word wrap; a single word longer than the cell still gets truncated by cell()
+    def wrap($n): [splits(" +")] | reduce .[] as $w ([];
+        if (.|length) == 0 then [$w]
+        elif ((.[-1] + " " + $w) | length) <= $n then (.[0:-1] + [.[-1] + " " + $w])
+        else . + [$w] end);
     def bar(l; m; r): l + ("─" * 6) + m + ("─" * 8) + m + ("─" * 52) + m + ("─" * 15) + m + ("─" * 11) + r;
     def row(num; who; ticket; state; type): "│ " + cell(num;4) + " │ " + cell(who;6) + " │ " + cell(ticket;50)
                       + " │ " + cell(state;13) + " │ " + cell(type;9) + " │";
@@ -83,11 +88,15 @@ table() {
       bar("├";"┼";"┤") ]
     + (if (.open|length) == 0
        then [ row(""; ""; "nothing open — map is done"; ""; "") ]
-       else (.open | map(row("#\(.number)"; .who; .title;
-                             .state + (if (.blk|length) > 0
-                                       then " " + (.blk | map("#"+(.|tostring)) | join(","))
-                                       else "" end);
-                             .type)))
+       else (.open | map(
+              (.title | wrap(50)) as $lines
+              | [ row("#\(.number)"; .who; $lines[0];
+                      .state + (if (.blk|length) > 0
+                                then " " + (.blk | map("#"+(.|tostring)) | join(","))
+                                else "" end);
+                      .type) ]
+                + ($lines[1:] | map(row(""; ""; "  " + .; ""; "")))
+            ) | add)
        end)
     + [ bar("└";"┴";"┘") ]
     | .[]'
