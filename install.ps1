@@ -45,13 +45,19 @@ if ($existing) {
     if (-not $isJunction) {
         throw "REFUSED: $LinkPath already exists as a real directory. Move or delete it, then re-run."
     }
-    # .Target is an array on some PowerShell versions.
+    # .Target is an array on some PowerShell versions. Resolve it with -ErrorAction
+    # SilentlyContinue: a junction whose target has been deleted still exists and still
+    # reports a Target, but Resolve-Path throws on it. That dangling state is the normal
+    # post-merge case - tearing down the worktree the junction pointed at produces it -
+    # so it must re-point, not blow up.
     $target = @($existing.Target)[0]
-    if ($target -and (Resolve-Path $target).Path -eq (Resolve-Path $source).Path) {
+    $targetResolved = if ($target) { (Resolve-Path $target -ErrorAction SilentlyContinue).Path } else { $null }
+    if ($targetResolved -and $targetResolved -eq (Resolve-Path $source).Path) {
         Write-Host "Already installed: $LinkPath -> $source"
         return
     }
-    Write-Host "Re-pointing existing junction (was: $target)"
+    if ($targetResolved) { Write-Host "Re-pointing existing junction (was: $target)" }
+    else { Write-Host "Re-pointing dangling junction (target gone: $target)" }
     [System.IO.Directory]::Delete($LinkPath)
 }
 
