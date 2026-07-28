@@ -85,6 +85,73 @@ outside the destination, or the agent errored. **You are the smell test, not Raj
 hold the whole map and are far better placed to catch a contradiction, which is the
 failure that actually hurts because it silently poisons every downstream ticket.
 
+## When a spawned agent fails
+
+**Retry a bad roll, flag a wall. One retry maximum, ever** — then flag regardless of
+class. There is no per-failure-mode policy table to apply: read the evidence and ask
+whether a re-fire could plausibly come out differently. If it could, re-fire once. If
+the same run would hit the same thing again, stop and hand it over.
+
+Look at it with `scripts/inspect-run.ps1` — pipe the spawn result straight in, or pass
+`-ResultFile` alone from a later session. It prints liveness, heartbeat, artifact state,
+the result JSON fields, and the stderr/transcript tails, and **returns no verdict**. The
+call is yours, here:
+
+| What you see | What you do |
+|---|---|
+| **Transient error** — `is_error: true`, stderr shows network / 5xx / rate limit | **Retry** |
+| **Budget exhausted** — cost at cap, no artifact | **Flag.** Raising the cap or splitting the ticket is Raj's call |
+| **Silent do-nothing** — exit 0, `is_error: false`, ticket open, no comment | **Retry**, prompt sharpened to name the missing artifact |
+| **Half-done** — comment but not closed, or closed with no comment | **Neither.** Finish the mechanical remainder yourself, no spawn. Flag only if the *work* is partial rather than the bookkeeping |
+| **Wedged** — killed after the heartbeat flatlined | **Triage on the tails.** Died mid-API-call → bad roll → retry. Looping the same action → wall → flag. Never really started (auth, bad path) → wall → flag |
+| **Coherently wrong** — artifact complete, answer collides with a prior decision | **Reopen, comment what it collides with, flag. Never retry** |
+
+Wrong never retries because new information may legitimately change Raj's mind — he
+might take the new answer or hold the old one, and you cannot know which. So it goes
+back to him with the collision named, never re-rolled and never resolved on your own
+judgment. The gist does not reach the map either way; you append only after verifying.
+
+**A non-empty `permission_denials` is not a failure signal.** A real successful run on
+disk carries one. Denials count only when no artifact landed.
+
+### The timer: look, do not kill
+
+**At 30 minutes you look; you do not kill.** Read the heartbeat: still moving → the
+ticket is genuinely long, let it run and re-check in 15. Not moving → wedged, kill by
+PID and triage on the tails. A hard kill at the clock bins legitimately slow work, and
+`--max-budget-usd` already bounds a runaway. Both intervals are overridable per-map in
+the map's **Notes**.
+
+A wedge is not automatically a flag — a dropped connection is a bad roll, a loop is a
+wall, and the table above already tells them apart.
+
+### Retry mechanics
+
+**Fresh spawn, fresh worktree**, prompt naming what the last attempt left behind ("a
+previous run pushed branch X — continue from it"). Never `--resume`: it carries the
+failed context forward, so an agent that talked instead of acting resumes talking.
+
+**The attempt count is a comment on the ticket** ("attempt 2 of 2"), not the run logs —
+`.claude/caesar-runs/` is gitignored machine-bound scratch that does not exist for a
+grill-only session on another checkout. GitHub is the truth.
+
+### Flagging: `caesar:needs-raj`
+
+A flagged ticket carries **`caesar:needs-raj`**, **stays assigned**, and gets a comment
+saying why you stopped. Label so the sweep sees it, comment so Raj can read it,
+assignment so it is off the frontier. `frontier.ps1` reports it as `flagged` and
+`status.ps1` renders it **Needs you**, above everything else.
+
+Never leave a failed ticket open and unassigned — that hands it back to the next
+session, which re-fires it, defeating the retry ceiling silently.
+
+The label is per ticket and is not only for failures: it marks **any AFK ticket you have
+stopped on**, including one that finished with an answer you will not accept alone. HITL
+tickets never carry it — Raj is already in the room.
+
+Retries fire **silently**. Flags **queue and surface at a break in the grill**, one line
+each — same as ready PRs, and for the same reason.
+
 ## Showing Raj where things stand
 
 Whenever he asks — "where are we", "what's left", "status" — run
@@ -178,10 +245,6 @@ tracker himself: report state in chat, and act on his sentence.
 
 Deliberately absent, and tracked as open tickets on Caesar's own map:
 
-- **Agent failure handling** (#17) — errored, silently did nothing, stalled, half-done,
-  or coherently wrong. Until it resolves: verify against GitHub, and when a run fails,
-  leave the ticket open and unassigned so it returns to the frontier, keep the worktree,
-  and tell Raj once.
 - **Session startup and rehydration** — what you do on your first turn to rebuild the
   picture, including a ticket assigned to Raj with no live process behind it.
 - **Charting new maps** — whether you may run `/wayfinder` in charting mode, or only
