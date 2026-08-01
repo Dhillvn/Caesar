@@ -49,7 +49,9 @@ same truth; only what the sweep *finds* differs.
    corpus behind *you are the smell test*, and it carries the per-map config overrides.
 2. **`scripts/frontier.ps1 -MapUrl <url>`**
 3. **`git worktree list`** — unconditionally, not only when a claimed row appears. The
-   orphan case below is visible only from the disk side.
+   orphan case below is visible only from the disk side. **If it shows a live `ticket-N-*`,
+   arm the watcher before anything else** (see *The watcher*): that centurion was
+   dispatched by a session that is gone, so you are now its only route back to Raj.
 4. **`gh pr list`** — an open PR awaiting the merge word is the one piece of prior state
    nothing else surfaces. Skip it and a decision of Raj's is silently dropped forever.
 
@@ -212,8 +214,9 @@ rather than referenced.
 3. **Grill.** Take one HITL ticket (`grilling`, `prototype`, HITL `task`) and work it
    with Raj in-session. There is no relay and no handoff: subagents cannot converse
    with a human, so you *are* the channel.
-4. **Harvest.** As centurions land, verify each against GitHub, append its gist to the map,
-   tear down its worktree.
+4. **Harvest.** A landing **wakes you** — the watcher below emits one line per event, and
+   that line arrives even while you sit idle mid-grill. On each: verify against GitHub,
+   append the gist to the map, tear down the worktree.
 5. **Repeat** until the frontier is empty.
 
 Never resolve more than one HITL ticket per session. Research tickets are exempt.
@@ -244,6 +247,42 @@ artifact: is the issue closed, does it carry a resolution comment.
 8 cores, 15.7 GB with ~2.3 GB free, each at 150–400 MB. It also bounds spend and
 blast radius. Per-ticket spend is capped by `-BudgetUsd` (default 2.0). Both are
 overridable per-map in the map's own **Notes** section.
+
+### The watcher — how a landing reaches you
+
+`spawn-ticket-agent.ps1` detaches and returns immediately, so a finished centurion reaches
+nothing on its own: no `SubagentStop`, no background-task completion, no entry in `claude
+agents`. Without a watcher your only wake is Raj typing, and nothing obliges you to check
+on that turn — which is how a landed scout sits unreported until he asks. **He should never
+have to ask.**
+
+**Arm it once per session, at your first dispatch**, and leave it up:
+
+```
+Monitor(command: 'powershell -NoProfile -ExecutionPolicy Bypass -File
+        <skill>\scripts\watch-runs.ps1 -RepoPath <repo>',
+        description: 'centurion landings', persistent: true)
+```
+
+One watcher covers every centurion on the machine, however many maps dispatched them — do
+not arm one per ticket. It backfills silently on start, so re-arming after a crash replays
+nothing and cannot double-append a gist to the map.
+
+Five events, and **it returns no verdict** — same as `inspect-run.ps1`:
+
+| Event | What it means |
+|---|---|
+| `LANDED` | result JSON parsed, `GIST:` line carried on the event — verify, then append |
+| `LANDED-NO-GIST` | exit clean, no `GIST:` printed — verify the ticket before appending anything |
+| `ERRORED` | `is_error: true`, with `terminal_reason` and cost |
+| `QUIET` | transcript has not advanced past the timer — **look, do not kill** |
+| `NO-TRANSCRIPT` | past the timer and the session never wrote a turn — it may never have started |
+
+`LANDED` is not "accept the gist" and `QUIET` is not "kill it". The failure table below
+makes both calls, unchanged.
+
+**Never hand-poll the run directory.** The watcher is the only mechanism; a hand-poll only
+fires on a turn you already have, which is the failure this replaces.
 
 ### Reporting mid-grill
 
@@ -287,11 +326,16 @@ disk carries one. Denials count only when no artifact landed.
 
 ### The timer: look, do not kill
 
-**At 30 minutes you look; you do not kill.** Read the heartbeat: still moving → the
-ticket is genuinely long, let it run and re-check in 15. Not moving → wedged, kill by
-PID and triage on the tails. A hard kill at the clock bins legitimately slow work, and
-`--max-budget-usd` already bounds a runaway. Both intervals are overridable per-map in
-the map's **Notes**.
+**At 30 minutes you look; you do not kill.** The clock is the watcher's — a centurion whose
+transcript has not advanced arrives as a `QUIET` event, and re-arrives every 15 minutes
+while it stays quiet, so a wedge cannot go silent again after one notice. You are never the
+one counting; before the watcher existed this rule had no clock at all and so never fired.
+
+On a `QUIET`, read the heartbeat: still moving → the ticket is genuinely long, let it run.
+Not moving → wedged, kill by PID and triage on the tails. A hard kill at the clock bins
+legitimately slow work, and `--max-budget-usd` already bounds a runaway. Both intervals are
+`-QuietMinutes` / `-RecheckMinutes` on the watcher, overridable per-map in the map's
+**Notes**.
 
 A wedge is not automatically a flag — a dropped connection is a bad roll, a loop is a
 wall, and the table above already tells them apart.
@@ -546,5 +590,10 @@ report state in chat, and act on his sentence.
 
 ## Out of scope for v1
 
-Away-mode and notifications (assume Raj is at the keyboard), and general non-Wayfinder
-work supervision.
+General non-Wayfinder work supervision.
+
+Landing notifications were listed here — *"assume Raj is at the keyboard"* — until the
+assumption was tested and found wrong twice over: he is often away, and being present
+never woke you either, because nothing reached you on a landing at all. *The watcher*
+above replaces the whole item. What is still genuinely out of scope is **away-mode**:
+deciding and acting alone while he is gone. You wake, you report, you wait.
