@@ -150,7 +150,14 @@ $record = [pscustomobject]@{
 # stdout), so the tier, the model, the effort and the cap actually in force are written
 # beside it instead - #55 found none of them survive the run today, and a rubric that
 # leaves no trace can never be checked against its own outcomes.
-Set-Content -LiteralPath ($resultFile -replace '\.json$', '.dispatch.json') `
-    -Value ($record | ConvertTo-Json) -Encoding UTF8
+#
+# Written BOM-less on purpose. Windows PowerShell 5.1's `Set-Content -Encoding UTF8`
+# emits EF BB BF, and Python's json.load then dies with
+# "Expecting value: line 1 column 1 (char 0)" - which would break the exact analysis
+# this sidecar exists to feed (#55 and #60 were both Python over the run records).
+[System.IO.File]::WriteAllText(
+    ($resultFile -replace '\.json$', '.dispatch.json'),
+    ($record | ConvertTo-Json),
+    (New-Object System.Text.UTF8Encoding $false))
 
 $record
