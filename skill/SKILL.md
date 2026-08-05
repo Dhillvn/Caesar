@@ -268,7 +268,7 @@ would be twelve combinations and an argument at every dispatch.
 | Tier | Model | Effort | When |
 |---|---|---|---|
 | **Heavy** | `claude-opus-5` | `medium` | The ticket says *figure out*. Design, forensics, research whose method is open. The thinking is the deliverable. |
-| **Execute** | `claude-sonnet-5` | `medium` | The spec is closed. Opus already decided; what remains is carrying it out. |
+| **Execute** | `claude-sonnet-5` | `low` | The spec is closed. Opus already decided; what remains is carrying it out. |
 | **Tail** | `claude-opus-5` | `high` | Never a dispatch choice. Retry-only (see the failure table) or an explicit per-map override in the map's **Notes**. |
 
 **Default when in doubt: Heavy.** A wrong Heavy call costs the token-price difference. A
@@ -284,12 +284,14 @@ If you cannot write both, it is Heavy. This is deliberately a test you can fail,
 you both write the spec and pick the tier, and the cheap answer is always the one that
 looks like less work.
 
-**Effort stays `medium` in two tiers of three.** Effort is the larger cost lever — an ~8x
+**Heavy stays `medium`; Execute is `low`.** Effort is the larger cost lever — an ~8x
 output-token span low→max against Opus's 1.67x over Sonnet — and it acts on all response
 tokens including tool calls, so higher effort inflates every turn's cache write. Raj runs
-Caesar itself, the hardest role on the machine, at Opus medium and finds it sufficient.
-Published high-effort wins are measured on hard benchmark tasks, not on deliberately
-bite-sized tickets. Holding effort at medium also keeps the rubric to one live dial.
+Caesar itself, the hardest role on the machine, at Opus medium and finds it sufficient, so
+Heavy holds there. Execute moved from medium to low per [#64](../docs/research/sonnet-low-reps.md):
+Sonnet-low beat Opus-low on cost on both fixtures tested, at identical (100%) grade —
+medium had no such edge (#56). Published high-effort wins are measured on hard benchmark
+tasks, not on deliberately bite-sized tickets.
 
 **The budget cap does not vary by tier.** Flat **$5.00** for every tier. Sonnet's cheaper
 tokens mean the cap bites less often, not that it should be set lower.
