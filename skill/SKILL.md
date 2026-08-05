@@ -291,6 +291,13 @@ Caesar itself, the hardest role on the machine, at Opus medium and finds it suff
 Published high-effort wins are measured on hard benchmark tasks, not on deliberately
 bite-sized tickets. Holding effort at medium also keeps the rubric to one live dial.
 
+[#64](../docs/research/sonnet-low-reps.md) measured Sonnet-low as 8.8–15.4% cheaper than
+Opus-low at identical (100%) grade, and proposed dropping Execute to `low`. **Raj held it
+at `medium`** on 2026-08-05: the fixtures were sub-$0.45 toy cells against real tickets at
+$1.58–$2.85, so the saving is unproven at working length, and one live dial is worth more
+than a measured single-digit discount. The measurement stands as evidence; the tier does
+not move on it.
+
 **The budget cap does not vary by tier.** Flat **$5.00** for every tier. Sonnet's cheaper
 tokens mean the cap bites less often, not that it should be set lower.
 

@@ -1,0 +1,15 @@
+taskA-opus-low               effort={'low': 8} match=True | billed=['claude-opus-5'] match=True | terminal=completed
+taskA-opus-low-rep2          NO RESULT
+taskA-opus-low-rep2b         effort={'low': 8} match=True | billed=['claude-opus-5'] match=True | terminal=completed
+taskA-opus-low-rep3b         effort={'low': 7} match=True | billed=['claude-opus-5'] match=True | terminal=completed
+taskA-sonnet-low             effort={'low': 7} match=True | billed=['claude-sonnet-5'] match=True | terminal=completed
+taskA-sonnet-low-rep2        effort={'low': 7} match=True | billed=['claude-sonnet-5'] match=True | terminal=completed
+taskA-sonnet-low-rep3        effort={'low': 8} match=True | billed=['claude-sonnet-5'] match=True | terminal=completed
+taskA-sonnet-low-rep4        effort={'low': 8} match=True | billed=['claude-sonnet-5'] match=True | terminal=completed
+taskB-opus-low               effort={'low': 8} match=True | billed=['claude-opus-5'] match=True | terminal=completed
+taskB-opus-low-rep2b         effort={'low': 8} match=True | billed=['claude-opus-5'] match=True | terminal=completed
+taskB-opus-low-rep3b         effort={'low': 9} match=True | billed=['claude-opus-5'] match=True | terminal=completed
+taskB-sonnet-low             effort={'low': 10} match=True | billed=['claude-sonnet-5'] match=True | terminal=completed
+taskB-sonnet-low-rep2        effort={'low': 21} match=True | billed=['claude-sonnet-5'] match=True | terminal=completed
+taskB-sonnet-low-rep3        effort={'low': 12} match=True | billed=['claude-sonnet-5'] match=True | terminal=completed
+taskB-sonnet-low-rep4        effort={'low': 12} match=True | billed=['claude-sonnet-5'] match=True | terminal=completed
