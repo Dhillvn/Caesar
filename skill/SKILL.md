@@ -243,6 +243,10 @@ cheap and, more importantly, makes verification real.
 exits 0 with `is_error: false` and an empty `permission_denials`. Verify against the
 artifact: is the issue closed, does it carry a resolution comment.
 
+**A nested `claude -p --permission-mode bypassPermissions` is auto-denied** by the
+parent session's own permission layer. Dropping the flag lets the nested call through.
+Any ticket whose method spawns sub-agents of its own hits this.
+
 **Concurrency: 4 centurions, globally, across all maps.** Measured, not chosen —
 8 cores, 15.7 GB with ~2.3 GB free, each at 150–400 MB. It also bounds spend and
 blast radius. Per-ticket spend is capped by `-BudgetUsd` (default 5.0). Both are
@@ -435,7 +439,7 @@ call is yours, here:
 |---|---|
 | **Transient error** — `is_error: true`, stderr shows network / 5xx / rate limit | **Retry** |
 | **Budget exhausted** — cost at cap, no artifact | **Flag.** Raising the cap or splitting the ticket is Raj's call |
-| **Silent do-nothing** — exit 0, `is_error: false`, ticket open, no comment | **Retry**, prompt sharpened to name the missing artifact |
+| **Silent do-nothing** — exit 0, `is_error: false`, ticket open, no comment. Includes the clean-exit-mid-wait shape: the centurion built its rig, backgrounded the work, and ended its turn saying it is waiting for a completion notification — nothing wakes a headless agent, so the work finishes after it is gone and is thrown away | **Retry**, prompt sharpened to name the missing artifact |
 | **Half-done** — comment but not closed, or closed with no comment | **Neither.** Finish the mechanical remainder yourself, no spawn. Flag only if the *work* is partial rather than the bookkeeping |
 | **Wedged** — killed after the heartbeat flatlined | **Triage on the tails.** Died mid-API-call → bad roll → retry. Looping the same action → wall → flag. Never really started (auth, bad path) → wall → flag |
 | **Coherently wrong** — artifact complete, answer collides with a prior decision | **Reopen, comment what it collides with, flag. Never retry** — *except* a complete-but-inadequate artifact at **Execute**, which retries **once at Heavy** |

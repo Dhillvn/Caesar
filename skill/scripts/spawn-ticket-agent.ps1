@@ -90,6 +90,10 @@ $promptPath = Join-Path $logDir "$WorktreeName-$stamp.prompt.txt"
 $guardrail = @"
 You are a Wayfinder ticket agent working ticket $TicketUrl.
 
+YOU HAVE NO NEXT TURN AND NOTHING CAN WAKE YOU. Run every long operation synchronously
+and block until it returns. If you catch yourself backgrounding work and ending your
+turn to wait for a notification, you have killed this ticket.
+
 SKILLS. You inherited the full skill list; invoke whatever the ticket needs, freely. The
 largest ordinary skill on this machine injects 45 KB, about 6% of your budget cap (#73),
 so cost is not a reason to decline a relevant skill. One exception: do NOT invoke
