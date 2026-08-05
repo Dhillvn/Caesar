@@ -1,0 +1,135 @@
+[
+ {
+  "cell": "taskA-opus-low",
+  "found": [
+   "A1",
+   "A2",
+   "A3",
+   "A4",
+   "A5"
+  ],
+  "n": 5,
+  "fp": [],
+  "cost": 0.3221,
+  "turns": 6,
+  "models": [
+   "claude-opus-5"
+  ],
+  "sid": "65b30b49-6db4-41de-9a33-0eca616aab67",
+  "terminal": "completed"
+ },
+ {
+  "cell": "taskA-opus-low-rep2b",
+  "found": [
+   "A1",
+   "A2",
+   "A3",
+   "A4",
+   "A5"
+  ],
+  "n": 5,
+  "fp": [],
+  "cost": 0.3221,
+  "turns": 6,
+  "models": [
+   "claude-opus-5"
+  ],
+  "sid": "93622768-d38a-4178-9be3-5f7a65693136",
+  "terminal": "completed"
+ },
+ {
+  "cell": "taskA-opus-low-rep3b",
+  "found": [
+   "A1",
+   "A2",
+   "A3",
+   "A4",
+   "A5"
+  ],
+  "n": 5,
+  "fp": [],
+  "cost": 0.3013,
+  "turns": 5,
+  "models": [
+   "claude-opus-5"
+  ],
+  "sid": "010d1c9d-417f-4af1-8ca3-fa5598b7caa6",
+  "terminal": "completed"
+ },
+ {
+  "cell": "taskA-sonnet-low",
+  "found": [
+   "A1",
+   "A2",
+   "A3",
+   "A4",
+   "A5"
+  ],
+  "n": 5,
+  "fp": [],
+  "cost": 0.3606,
+  "turns": 5,
+  "models": [
+   "claude-sonnet-5"
+  ],
+  "sid": "1f67864e-7342-4556-860e-d0f4d0d5304e",
+  "terminal": "completed"
+ },
+ {
+  "cell": "taskA-sonnet-low-rep2",
+  "found": [
+   "A1",
+   "A2",
+   "A3",
+   "A4",
+   "A5"
+  ],
+  "n": 5,
+  "fp": [],
+  "cost": 0.243,
+  "turns": 5,
+  "models": [
+   "claude-sonnet-5"
+  ],
+  "sid": "50537c2f-adac-49f2-9d49-07811d2a9041",
+  "terminal": "completed"
+ },
+ {
+  "cell": "taskA-sonnet-low-rep3",
+  "found": [
+   "A1",
+   "A2",
+   "A3",
+   "A4",
+   "A5"
+  ],
+  "n": 5,
+  "fp": [],
+  "cost": 0.273,
+  "turns": 6,
+  "models": [
+   "claude-sonnet-5"
+  ],
+  "sid": "9e90e99f-ab8c-4c99-ae6e-6ccabefbcf89",
+  "terminal": "completed"
+ },
+ {
+  "cell": "taskA-sonnet-low-rep4",
+  "found": [
+   "A1",
+   "A2",
+   "A3",
+   "A4",
+   "A5"
+  ],
+  "n": 5,
+  "fp": [],
+  "cost": 0.2734,
+  "turns": 6,
+  "models": [
+   "claude-sonnet-5"
+  ],
+  "sid": "548fea29-05c0-477f-aed3-37ed4d180374",
+  "terminal": "completed"
+ }
+]
