@@ -243,10 +243,67 @@ cheap and, more importantly, makes verification real.
 exits 0 with `is_error: false` and an empty `permission_denials`. Verify against the
 artifact: is the issue closed, does it carry a resolution comment.
 
+**A nested `claude -p --permission-mode bypassPermissions` is auto-denied** by the
+parent session's own permission layer. Dropping the flag lets the nested call through.
+Any ticket whose method spawns sub-agents of its own hits this.
+
 **Concurrency: 4 centurions, globally, across all maps.** Measured, not chosen —
 8 cores, 15.7 GB with ~2.3 GB free, each at 150–400 MB. It also bounds spend and
 blast radius. Per-ticket spend is capped by `-BudgetUsd` (default 5.0). Both are
 overridable per-map in the map's own **Notes** section.
+
+### The skill block — what the prompt says about skills
+
+A centurion inherits everything an interactive session has: both `CLAUDE.md` files, the
+full skill list, the user-level SessionStart hooks. `--worktree` changes only the working
+directory ([#72](../docs/research/headless-inheritance.md), four probes through the real
+spawn path). So the skill block is an **override layer, not a re-listing** — naming a
+skill the agent already holds is dead weight in every dispatch. Three rules, in order:
+
+**1. Never re-list what is inherited.** Everything in the global `CLAUDE.md` reaches the
+centurion already, including "run `ponytail` before writing code" and caveman mode — #72
+caught a probe writing its own refusal in caveman style, which is that hook acting on a
+headless agent. Retyping those buys nothing, and repetition is not a strengthener:
+whether `ponytail` changes a headless agent's output at all has never been measured.
+
+**2. Never retype an exclusion — the spawn script carries them.** The one banned skill is
+`claude-api`, and the ban lives in the guardrail heredoc in
+`scripts/spawn-ticket-agent.ps1`, where it reaches every centurion and cannot be
+forgotten. **Ban nothing else.** [#73](../docs/research/skill-cost-inventory.md) measured
+all 119 `SKILL.md` files on the machine against several hundred real loads: `SKILL.md`
+size predicts injection at 0.94×, directory size does not predict it at all, and the
+largest ordinary skill is 45 KB — about 6% of the $5.00 cap. `claude-api` injects 898 KB
+(~345K tokens, 147% of the cap) only because its bundle has no `SKILL.md` and inlines its
+whole reference tree. Cost separates that one skill from the population and cannot rank
+the rest against each other, so the old blanket ban on "any other very large reference
+skill" banned cheap skills for nothing and is retired.
+
+For a *new* skill, the test is structural, not size: no `SKILL.md` in its directory, or
+observed injection ≈ its whole directory size. Threshold **100 KB injected**. Re-run
+`scripts/skill_cost.py` after a Claude Code upgrade — `claude-api`'s bundle grew 799 KB →
+898 KB in one patch release. Only Raj adds to the ban; a centurion that wants a banned
+skill reads its files off disk.
+
+**3. Name only what the ticket needs and the agent would not reach for.** This is the
+per-ticket judgment and the only part you write by hand — one line, no rationale:
+
+| Ticket shape | Name in the prompt |
+|---|---|
+| design or interface work | `impeccable` (2.7 MB on disk, 14 KB to load — #73; directory size is not cost) |
+| review ticket | the code-review skills — `numen-stack-review`, `codex-review` |
+| web retrieval | Firecrawl |
+| research past ~5 sources | **nothing — read the sources directly** |
+
+**The NotebookLM expectation is retired, not forgotten.**
+[#74](../docs/research/notebooklm-headless.md) measured it from inside a real centurion:
+query and ingest are both programmatically capable and neither is blocked by the deny
+list, but both ride browser cookies Google expires server-side (~10 days observed),
+renewable only by a human signing into a Chromium window — `auth refresh` cannot do it
+headless. Worse, `notebooklm auth check` reports *"Authentication is valid"* on a dead
+session, so a centurion believes it has access and fails downstream. Never write "have
+NotebookLM ingest the sources" into a prompt. If a ticket wants the notebook anyway, its
+preflight is `auth check --test` or the real query, and failure is a fallback to reading
+the sources directly, not a ticket-ending error.
 
 ### The dispatch rubric — which tier
 
@@ -382,7 +439,7 @@ call is yours, here:
 |---|---|
 | **Transient error** — `is_error: true`, stderr shows network / 5xx / rate limit | **Retry** |
 | **Budget exhausted** — cost at cap, no artifact | **Flag.** Raising the cap or splitting the ticket is Raj's call |
-| **Silent do-nothing** — exit 0, `is_error: false`, ticket open, no comment | **Retry**, prompt sharpened to name the missing artifact |
+| **Silent do-nothing** — exit 0, `is_error: false`, ticket open, no comment. Includes the clean-exit-mid-wait shape: the centurion built its rig, backgrounded the work, and ended its turn saying it is waiting for a completion notification — nothing wakes a headless agent, so the work finishes after it is gone and is thrown away | **Retry**, prompt sharpened to name the missing artifact |
 | **Half-done** — comment but not closed, or closed with no comment | **Neither.** Finish the mechanical remainder yourself, no spawn. Flag only if the *work* is partial rather than the bookkeeping |
 | **Wedged** — killed after the heartbeat flatlined | **Triage on the tails.** Died mid-API-call → bad roll → retry. Looping the same action → wall → flag. Never really started (auth, bad path) → wall → flag |
 | **Coherently wrong** — artifact complete, answer collides with a prior decision | **Reopen, comment what it collides with, flag. Never retry** — *except* a complete-but-inadequate artifact at **Execute**, which retries **once at Heavy** |
