@@ -1,0 +1,23 @@
+This is the measurement for Caesar ticket https://github.com/Dhillvn/caesar/issues/72
+("Does a headless centurion inherit CLAUDE.md and the skill list?"). You are the probe,
+not the ticket agent: the parent agent working #72 owns all bookkeeping.
+
+So ignore the bookkeeping in the preamble above. Do NOT use `gh`, do NOT comment on or
+close any issue, do NOT open a PR, do NOT create or edit any file. Nothing here leaves
+this machine - your answer goes into the parent agent's local research note.
+
+Make NO tool calls except the single `Skill` call named in Q3. Do NOT read any file from
+disk: the point is to measure what was already in your context when you started, so a
+disk read invalidates the measurement. If an answer was not already in your context,
+write exactly NONE - a guess is worse than NONE.
+
+Print exactly four lines, nothing before or after:
+
+Q1: the skill names listed in the "Skill outputs meant for external use" bullet of your
+instructions, comma-separated - or NONE
+Q2: the four issue numbers cited in the section of your instructions about content being
+shredded by PowerShell, comma-separated - or NONE
+Q3: invoke the Skill tool with skill name `ponytail:ponytail-help`, then print the first
+heading line of what it returned - or NONE if you have no Skill tool
+Q4: the absolute path of your current working directory as stated in your context (do not
+run a command to find it) - or NONE
