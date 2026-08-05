@@ -66,7 +66,12 @@ function Get-HeartbeatAge([string]$WorktreeName) {
 
 function Invoke-Pass([bool]$Silent) {
     if (-not (Test-Path $logDir)) { return }
-    foreach ($f in Get-ChildItem $logDir -Filter *.json -File -ErrorAction SilentlyContinue) {
+    # *.dispatch.json is the tier/model/effort sidecar written at spawn time (#52). It is
+    # not a run result and never carries a GIST, so without this exclusion every single
+    # dispatch emits a phantom LANDED-NO-GIST the moment it starts.
+    $runFiles = Get-ChildItem $logDir -Filter *.json -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -notlike '*.dispatch.json' }
+    foreach ($f in $runFiles) {
         if ($reported[$f.Name] -eq 'done') { continue }
         $name = $f.BaseName -replace '-\d{8}-\d{6}$', ''
 
