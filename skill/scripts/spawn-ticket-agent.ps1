@@ -90,6 +90,10 @@ $promptPath = Join-Path $logDir "$WorktreeName-$stamp.prompt.txt"
 $guardrail = @"
 You are a Wayfinder ticket agent working ticket $TicketUrl.
 
+YOU HAVE NO NEXT TURN AND NOTHING CAN WAKE YOU. Run every long operation synchronously
+and block until it returns. If you catch yourself backgrounding work and ending your
+turn to wait for a notification, you have killed this ticket.
+
 Write ONLY to your own ticket ($TicketUrl) and to your own git branch. Never edit the
 map issue body, and never edit another ticket. You cannot merge anything; open a draft
 PR and stop.
