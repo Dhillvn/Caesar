@@ -22,9 +22,17 @@ So this document is honest about a split that matters:
 - **Model IDs, pricing, and context windows are quoted from Anthropic's own bundled reference
   material** (the `claude-api` skill's cached tables, stamped `2026-06-24`) — Anthropic-authored,
   but a cache, not a live page. They are tiered accordingly and are **not** presented as live-verified.
-- **The third-party agentic-benchmark survey was not done.** It is named in §6 as an unclosed gap
-  rather than filled with recollection. Writing a benchmark table from training data is exactly the
-  laundering this ticket forbids.
+- **The third-party agentic-benchmark survey was not done on attempt 1.** It is **now done** — §5,
+  added on attempt 2, which was dispatched for that purpose alone and forbidden from loading
+  `claude-api` again. Nothing in §5 comes from recollection; every claim there carries a URL and the
+  access date 2026-08-05, and vendor claims encountered along the way are quarantined in §5.6 rather
+  than laundered into the table.
+
+**Why attempt 1 could afford only one fetch, recorded because it is a reusable operational fact.**
+The cost was context size, not web reading. Attempt 1 spent **1.7M cache-read tokens to produce 12.7K
+output tokens**; the `claude-api` skill load injected ~340K tokens, after which every turn re-billed
+~400K, while its actual Firecrawl fetches totalled ~17K. Attempt 2 ran the entire tier-D survey on
+two searches and three narrow scrapes.
 
 ## Tiers used throughout
 
@@ -33,7 +41,7 @@ So this document is honest about a split that matters:
 | **A — Anthropic primary, live** | Read from an Anthropic-operated page during this ticket, with URL and access date. |
 | **B — Anthropic primary, cached** | Anthropic-authored text bundled into the harness, with its own cache stamp. Authoritative in origin, stale in time. |
 | **C — Measured here** | A probe or artifact from #50 / #55 on this machine. Not published, but observed. |
-| **D — Third-party, disclosed method** | Published benchmark with a stated harness. **No findings in this document reach tier D.** |
+| **D — Third-party, disclosed method** | Published benchmark or evaluation with a stated harness. §5 is the tier-D survey. Sources whose method is only partly disclosed are graded down inline and say so. |
 | **E — Inference** | Reasoning from A–C. Carries no independent authority. Labelled `(inference)` inline. |
 
 An uncited claim appears nowhere below. Where the evidence ran out, the section says so.
@@ -266,7 +274,166 @@ ticket**, and turn count is the entire cost and the entire failure mode.
 
 ---
 
-## 5. Provisional dispatch table
+## 5. Third-party evidence — tier D
+
+Added on the second attempt at this ticket, which was dispatched narrowly to close the gap §6.1
+originally named. All sources below were read **2026-08-05**. Each is graded on one question the
+ticket insists on: **does its harness resemble an unattended, multi-turn, budget-capped run that
+must close its own ticket and open a PR?** Where the answer is no, that is stated and the result is
+not stretched.
+
+### 5.1 Long-Horizon Terminal-Bench (LHTB) — the closest published shape to Caesar
+
+`https://zli12321.github.io/LHTB/` — read 2026-08-05, published July 2026.
+
+Method, quoted from the page: 46 tasks across 9 categories, **18 frontier models**, one identical
+harness (**Terminus-2**), one Docker container per task, **a 90-minute budget, one attempt, no
+retries of bad runs**, and hidden replay-based verifiers paying continuous partial credit. A task
+counts as solved at reward ≥ 0.95.
+
+This is the **only** source found whose harness genuinely resembles Caesar's: unattended, hundreds
+of dependent turns, a hard resource cap that fires mid-work, one shot, and a verifier that only
+counts real artifacts. Its headline findings:
+
+- Best model (Grok 4.5) averages **0.505** mean reward and solves **13 of 46**. Grok 4.5 "narrowly
+  leads a trio of Anthropic models". **29 of 46 tasks have never been solved by any model.**
+- Runs average **231 steps, 9.9M tokens, 85 minutes**.
+- **"79% of unresolved runs time out while the agent is still actively making progress."**
+- **"Price is not performance"** — MiniMax M3 scores 0.39 at ~$6/task, ahead of GPT-5.4 at $28.
+
+**The transferable finding, and it is the strongest tier-D result in this document.** At
+long-horizon scale the dominant failure mode is *not* incapability, it is **the cap firing on work
+that was still progressing** — 79% of failures. #55 measured Caesar's version of exactly this: 17
+runs burned $56.44, 20% of all spend, and returned an empty `result`. An independent 18-model,
+identical-harness study finds the same failure mode dominates at this task shape. That corroborates
+#55's cap analysis from outside this repo, and it argues that **cap headroom buys more completed
+tickets than model or effort choice does** — because most losses are timeouts, not wrong answers.
+
+**Limits, stated.** Per-model rewards on the page live in charts, not prose; this document therefore
+does **not** quote a Claude-family reward figure from it, and the per-task cost figures the page
+carries could not be tied to specific Claude 5-family model IDs with confidence. The page's
+Anthropic entries also cannot be assumed to be Opus 5 / Sonnet 5. **LHTB does not settle row 7.**
+
+### 5.2 Artificial Analysis on Opus 5 across effort — tier D, disclosed harness
+
+`https://x.com/ArtificialAnlys/status/2080734447717298483` — posted 2026-07-24, read 2026-08-05.
+Harness disclosed: **Stirrup**, AA's open-source reference agent harness, for the agentic
+benchmarks; Intelligence Index run with Opus 4.8 server-side fallback enabled.
+
+Two claims here bear directly on the tier-E rows:
+
+> "Claude Opus 5's effort setting spans a wide range of token usage-performance tradeoffs. On
+> GDPval-AA v2, effort levels span **407 Elo points**, with **output token usage ranging around 8x
+> from low to max effort**."
+
+> "Claude Opus 5 (max) costs **$2.03** on average per Intelligence Index task ... still above Claude
+> Opus 4.8 (max) at $1.80 and **Claude Sonnet 5 (max) at $1.53**. However, **at high and xhigh
+> reasoning efforts Opus 5 can outperform both Opus 4.8 and Claude Sonnet 5 at a lower cost per
+> task**."
+
+Also: "Claude Opus 5 (xhigh) with Claude Code leads the Artificial Analysis Coding Index"; 89% on
+Terminal-Bench v2.1 at max effort.
+
+**What this settles.** The 8x low→max output-token range is measured, third-party, and disclosed —
+effort is a large cost lever, not a marginal one. **Row 9's premise is confirmed at the token level.**
+
+**What it does not settle.** Token spend is not turn count, and AA reports no turn counts. It also
+does not transfer cleanly to Caesar's cap: a per-task cost *average* over a benchmark says nothing
+about the tail, and Caesar dies on the tail.
+
+**Row 7 gets its sharpest published answer here, and it is the opposite of the intuition:** the
+cheaper model is not the cheaper *completion*. AA's own comparison puts Opus 5 at high/xhigh
+**above** Sonnet 5 on quality **at a lower cost per task**. That is a direct third-party rebuttal of
+the "1.67× cheaper tokens ⇒ cheaper tickets" reasoning §4.2 warned about — and it comes from a
+harness (Stirrup) that at least runs multi-step agentic work, unlike a single-shot score.
+
+### 5.3 CursorBench 3.2, via Caylent — tier D, disclosed metric, secondary reporting
+
+`https://caylent.com/blog/claude-opus-5-changes-improvements-and-how-it-compares-to-fable-5` —
+read 2026-08-05. Caylent reports CursorBench 3.2 (`https://cursor.com/cursorbench`), described as
+"ambiguous, multi-file software-engineering work drawn from real Cursor sessions", reporting
+**score, token use, steps, and average cost per task across effort settings**, with cost computed
+from published token prices.
+
+| Config | Score | Avg benchmark cost/task |
+|---|---|---|
+| Opus 5, **low** | 62.8% | **$2.55** |
+| Opus 4.8, max | 62.3% | $5.77 |
+| Opus 5, **max** | 70.0% | **$8.23** |
+| Fable 5, max | 70.5% | $17.32 |
+
+**Opus 5 at low effort costs 31% of Opus 5 at max and gives up 7.2 points.** This is the only
+published table found that puts effort, quality *and* dollars on the same axes for Opus 5, and
+CursorBench is the closest benchmark in this survey to Caesar's actual work (real multi-file repo
+tasks, steps counted). It transfers **partially**: Cursor's harness is human-adjacent and retried,
+not unattended and capped.
+
+Caylent also states, of its own internal testing (methodology **not** disclosed — treat as weaker
+than the CursorBench table): Opus 5 "producing significantly longer reasoning traces, which would
+explain the cost-per-task increase compared to Opus 4.8", and that Opus 5 "is unlikely to work as a
+drop-in replacement. You will need to recalibrate the thinking effort assigned to each task."
+
+### 5.4 CodeRabbit on Opus 5 effort levels — tier D, disclosed configs, wrong harness shape
+
+`https://www.coderabbit.ai/blog/opus-5-model-review` — read 2026-08-05. Three configurations run on
+their production review pipeline: junior profile at **medium** (their default), senior at **high**,
+senior at **xhigh**; three-run averages against a known-issue benchmark.
+
+- Opus 5 xhigh vs their production baseline: actionable precision **39.3% vs 35.2%**, but known
+  issues caught **55.2% vs 61.1%**, and ~**4× the nitpicks**.
+- **"More reasoning did not consistently produce a better review."** The junior/**default (medium)**
+  configuration **found the most issues** when every comment class was counted.
+- Token behaviour is **not monotonic in effort**: "X-high was the heaviest writer, producing 10.8k
+  output tokens per call. More effort did not automatically mean more output: **High wrote less than
+  junior/default**."
+- Their recommendation: "**Test every relevant effort level, including low and medium.** More
+  reasoning changed the trade-off in our runs; it did not consistently improve the review."
+
+**Transfer: poor, and it is reported as poor.** A code review is a single large-context call, not a
+29-turn tool-using loop; its "quality" metric is precision/recall of comments, which has no Caesar
+analogue. What *does* carry is the shape of the result — **effort is a trade between failure modes,
+not a quality dial** — and the non-monotonic token finding, which is a direct warning against
+assuming `low < medium < high < xhigh` in spend.
+
+### 5.5 FrontierCode v1.1, via SitePoint — tier D, but methodology partly undisclosed
+
+`https://www.sitepoint.com/claude-opus-5-medium-effort-frontiercode-benchmark/` — read 2026-08-05.
+Reports Opus 5 peaking at **medium** effort (53.4% main / 63.6% extended), with high "plateaued or
+marginally declined" at roughly 3× the relative compute of low versus ~1.5× for medium.
+
+**Graded down deliberately.** The article itself discloses that most scores are approximate
+("~") and that "**relative compute cost methodology is undisclosed** — it is not confirmed whether
+these multipliers reflect total tokens consumed, thinking tokens only, or another metric." It is a
+secondary write-up, not the benchmark's own publication. It is recorded here as *directionally
+concordant with CodeRabbit* and is **not** used to settle a row on its own.
+
+### 5.6 Vendor claims encountered and explicitly not laundered
+
+Anthropic's Sonnet 5 launch page (`https://www.anthropic.com/news/claude-sonnet-5`, read 2026-08-05)
+carries customer testimonials — "that used to stall halfway", "finishes complex tasks where previous
+Sonnet models would stop short", "carried each one through to a tested, verified result on its own"
+— which describe exactly Caesar's success condition. **They are marketing testimonials with no
+disclosed method, no harness and no n.** They are recorded as vendor claims and settle nothing. The
+same goes for a Terminal-Bench figure of 76.1% for Sonnet 5 seen only in a LinkedIn post, which is
+not traced to a primary source here and is therefore **not** carried into the table.
+
+### 5.7 Where the literature contradicts itself — and why that is the result
+
+On the single question "is higher effort better", the four tier-D sources **do not agree**:
+
+- CursorBench: **max ≫ low** (70.0% vs 62.8%) — monotonic, at 3.2× the cost.
+- AA/GDPval-AA v2: **407 Elo across the effort span** — strongly monotonic.
+- CodeRabbit: **medium found the most issues**; xhigh traded recall for precision.
+- FrontierCode (weak): **medium is the peak**; high plateaus or declines.
+
+That split is not noise, it is the point: **effort's payoff is a property of the harness and the
+task, not of the model.** No published number therefore transfers to Caesar's harness, and any
+attempt to pick Caesar's effort level from these tables would be picking someone else's harness.
+**Row 6 is narrowed but not settled**, and #56 remains the only way to close it.
+
+---
+
+## 6. Provisional dispatch table
 
 Built from published evidence plus the two prior tickets. Every row carries its tier. Rows marked
 **E** rest on inference and are #56's test list.
@@ -278,35 +445,56 @@ Built from published evidence plus the two prior tickets. Every row carries its 
 | 3 | Budget cap | **`-BudgetUsd 5.00`** | C | #55: p97 of completed cost; kills 3/101; a fired cap costs its full value and returns nothing |
 | 4 | Effort as a spend guard? | **No** | A | Live docs: "a behavioral signal, not a strict token budget" |
 | 5 | Model for AFK tickets | **Opus 5** *(hold)* | C | #55: every one of 101 completed runs was Opus; zero Sonnet ticket runs exist. Holding is the evidenced position, not a preference |
-| 6 | Effort for AFK tickets | **`high`** *(raise from `medium`)* | **E** | Opus 5 guidance starts at `high`; `high` is the API default; Caesar's `medium` was never derived. Cost impact unmeasured |
-| 7 | Is Sonnet 5 viable at all? | **Unknown — test** | **E** | 1.67× price gap (B+C) is real; turn-count effect is unmeasured. Could be cheaper or could cap out |
-| 8 | `xhigh` for the long tail? | **Unknown — test** | **E** | `xhigh` is documented for ">30 min agentic"; #55 puts only Caesar's tail there (p90 = 12.6 min). Plausible for tail tickets, unjustified as a default |
-| 9 | Does low effort actually cut turns? | **Unknown — test** | **E** | Docs assert fewer tool calls at low effort; #55 says turns drive cost. Never measured on a real ticket |
+| 6 | Effort for AFK tickets | **Unsettled — test `medium` vs `high`** | **D (conflicting)** | §5.7: four tier-D sources disagree on whether higher effort helps. CursorBench and AA say strongly yes; CodeRabbit and FrontierCode say medium is the peak. Effort's payoff is a harness property. `high` remains the API default; Caesar's `medium` was still never derived |
+| 7 | Is Sonnet 5 viable at all? | **Test — but expect Opus 5 to win on cost, not just quality** | **D** | §5.2 (AA/Stirrup, 2026-07-24): "at high and xhigh reasoning efforts Opus 5 can outperform both Opus 4.8 and Claude Sonnet 5 **at a lower cost per task**." Third-party rebuttal of the cheaper-tokens-⇒-cheaper-tickets premise. Not conclusive for Caesar's harness, but the prior has flipped |
+| 8 | `xhigh` for the long tail? | **Yes for tail tickets, no as a default** | **D** | §5.2: Opus 5 (xhigh) + Claude Code leads AA's Coding Agent Index. §5.4: xhigh was the heaviest writer (10.8k output tok/call) and traded recall for precision. Cost-justified only where the tail is real; #55 puts only Caesar's tail past 30 min |
+| 9 | Does low effort actually cut turns? | **Cuts tokens ~8×; turn effect still unmeasured** | **D (partial)** | §5.2: output token usage spans ~8× low→max on GDPval-AA v2. §5.3: Opus 5 low costs 31% of max for −7.2 pts. §5.4 warns spend is **non-monotonic** in effort (high wrote less than medium). No published source reports turns-vs-effort |
 | 10 | Effort proof in the run artifact | **Write the flag at spawn time** | C | #50: effort appears nowhere in the result JSON; transcript-only, and transcripts are not run artifacts |
 | 11 | Record the Sonnet price in force | **Required for any #56 cost run** | B | Sonnet 5 intro pricing ($2/$10) expires 2026-08-31; runs before and after are not comparable |
 | 12 | Invalid config safety | **Model fails loud; effort fails silent** | C | #50 + #56 partial: bad `--model` = 404, $0.00; bad `--effort` = stderr warning, exit 0, silently re-resolves |
 
 ### The shortlist #56 must test
 
-Rows **6, 7, 8, 9** — and only those. Everything else is either settled by published documentation
-or by the two prior tickets, and spending model-run money on it would be waste.
+**Revised after the tier-D survey. Two of the four rows come off the list.**
+
+- **Row 8 — drop from #56.** §5.2 and §5.4 between them give a defensible call: `xhigh` for the
+  tail, not as a default. Spending Caesar money to re-derive it is waste.
+- **Row 9 — reduce, do not drop.** The token half is settled at tier D (~8× span). What is left is
+  one narrow question — *does low effort reduce the number of turns on a real Caesar ticket* — and
+  §5.4's non-monotonic result means it cannot be assumed. That is a single cheap probe, not a sweep.
+- **Row 7 — keep, with the prior flipped.** Still worth one run, because §4.2's argument stands: no
+  published source runs Caesar's scaffold under Caesar's cap. But it is now a **falsification** test
+  of a third-party expectation ("Opus 5 wins on cost too"), not an open question, and it should be
+  scoped as one run, not a comparison sweep.
+- **Row 6 — keep, and it is now the only genuinely open row.** §5.7: the literature contradicts
+  itself on medium-vs-high, and the contradiction is explained by harness dependence, which means
+  only Caesar's own harness can answer it.
+
+So #56's list shrinks from four one-dimensional questions to **row 6 (medium vs high, the real
+experiment), row 7 (one Sonnet 5 run as a falsification), row 9 (one low-effort turn-count probe)**.
 
 Note what the shortlist is *not*: it is not a model × effort grid. Rows 1, 2 and 4 collapse the grid
-before it is built — no mid-run variation, no per-type split, no effort-as-budget. What survives is
-four one-dimensional questions, which is a far cheaper experiment than #56 was originally scoped for.
-That collapse is this ticket's main deliverable.
+before it is built — no mid-run variation, no per-type split, no effort-as-budget. That collapse,
+plus the tier-D trimming above, is this ticket's main deliverable.
+
+**One finding sits outside the table and belongs on #51, not #56.** §5.1: in an 18-model,
+identical-harness, budget-capped study, **79% of unresolved runs timed out while still making
+progress**. #55 measured Caesar's version (17 empty runs, $56.44, 20% of spend). Independent
+corroboration that at this task shape **cap headroom buys more completed work than model or effort
+choice does.** If only one lever gets tuned, the published evidence says tune the cap.
 
 ---
 
-## 6. What this document does not establish
+## 7. What this document does not establish
 
 Stated explicitly, because a gap named is a result and a gap papered over is a trap.
 
-1. **The third-party agentic-benchmark survey (SWE-bench-family, terminal/agentic harnesses, and
-   their disclosed methods) was not performed.** It was cut by the budget, not by judgement. **No
-   tier-D finding appears anywhere above.** If a future reader wants published agentic numbers, that
-   work is still owed — and §4.2 argues it would be of limited use to Caesar even once done, since
-   every such score carries its own harness.
+1. ~~The third-party agentic-benchmark survey was not performed.~~ **Closed on attempt 2 — see §5.**
+   What remains open within it: **no published source reports turn count against effort level**, and
+   **no per-model reward figure for a Claude 5-family model could be extracted from LHTB** (§5.1),
+   whose charts are not machine-readable and whose Anthropic entries could not be pinned to specific
+   model IDs. Both are named rather than guessed. §4.2's argument survives the survey intact: every
+   tier-D score carries its own harness, and §5.7 shows those harnesses disagree with each other.
 2. **Pricing, model IDs and context windows were not re-read from a live page.** They are tier B.
    Verify before freezing them into a policy.
 3. **Model deprecation and alias schedules** were not checked at all. Unknown whether `claude-opus-5`
