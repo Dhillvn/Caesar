@@ -245,8 +245,72 @@ artifact: is the issue closed, does it carry a resolution comment.
 
 **Concurrency: 4 centurions, globally, across all maps.** Measured, not chosen —
 8 cores, 15.7 GB with ~2.3 GB free, each at 150–400 MB. It also bounds spend and
-blast radius. Per-ticket spend is capped by `-BudgetUsd` (default 2.0). Both are
+blast radius. Per-ticket spend is capped by `-BudgetUsd` (default 5.0). Both are
 overridable per-map in the map's own **Notes** section.
+
+### The dispatch rubric — which tier
+
+Every dispatch picks a **tier**, passed as `-Tier` to `spawn-ticket-agent.ps1`. The rubric
+governs **dispatched agents only** — `wayfinder:research` tickets and AFK `wayfinder:task`
+tickets. Grilling and prototype tickets are HITL, worked by you and Raj in session, and
+never reach it.
+
+Why a rubric at all, and why this one: you always run on Opus. You read the map, pick the
+ticket and write the spec — so the *planning* half of the classic Opus-plans /
+Sonnet-executes split is already done, on Opus, before any centurion starts. The centurion
+is the executor. The discriminator is therefore not ticket *type* (which predicts nothing)
+and not a difficulty rating (unfalsifiable), but **whether the thinking has already
+happened**.
+
+Tiers are **named pairs**, not a model dial crossed with an effort dial. Independent dials
+would be twelve combinations and an argument at every dispatch.
+
+| Tier | Model | Effort | When |
+|---|---|---|---|
+| **Heavy** | `claude-opus-5` | `medium` | The ticket says *figure out*. Design, forensics, research whose method is open. The thinking is the deliverable. |
+| **Execute** | `claude-sonnet-5` | `medium` | The spec is closed. Opus already decided; what remains is carrying it out. |
+| **Tail** | `claude-opus-5` | `high` | Never a dispatch choice. Retry-only (see the failure table) or an explicit per-map override in the map's **Notes**. |
+
+**Default when in doubt: Heavy.** A wrong Heavy call costs the token-price difference. A
+wrong Execute call costs a wasted run plus a re-fire.
+
+**The Execute gate — objective, not a judgment of "well defined".** A ticket is Execute
+**only if its prompt states both**:
+
+1. the files or artifact to produce, by name; and
+2. the check that proves it is done.
+
+If you cannot write both, it is Heavy. This is deliberately a test you can fail, because
+you both write the spec and pick the tier, and the cheap answer is always the one that
+looks like less work.
+
+**Effort stays `medium` in two tiers of three.** Effort is the larger cost lever — an ~8x
+output-token span low→max against Opus's 1.67x over Sonnet — and it acts on all response
+tokens including tool calls, so higher effort inflates every turn's cache write. Raj runs
+Caesar itself, the hardest role on the machine, at Opus medium and finds it sufficient.
+Published high-effort wins are measured on hard benchmark tasks, not on deliberately
+bite-sized tickets. Holding effort at medium also keeps the rubric to one live dial.
+
+**The budget cap does not vary by tier.** Flat **$5.00** for every tier. Sonnet's cheaper
+tokens mean the cap bites less often, not that it should be set lower.
+
+**The tier is written down, not applied silently.** Every dispatch records tier, model,
+effort and the cap actually in force on the run record. A rubric applied silently cannot be
+audited, and a call that cannot be checked against its outcome can never be improved.
+
+Worked examples, from this skill's own map:
+
+| Ticket | Tier | Why |
+|---|---|---|
+| #50 — how does model/effort resolution work | Heavy | Had to design its own probes |
+| #55 — corpus cost analysis | Heavy | Chose its own statistics; found the duplicate-record trap |
+| #58 — published-evidence survey | Heavy | Contradictory sources; the transfer judgment *was* the deliverable |
+| #60 — cap-death forensics | Heavy | Refuted the hypothesis it was handed and rejected the proposed discriminator |
+| #56 — run the remaining probes | Execute | Fixtures and graders already exist; test list enumerated |
+| #52 — build the flags and write the rubric in | Execute | Named script, named parameters, named text |
+| #53 — dogfood two models concurrently | Execute | Acceptance is mechanical |
+
+Note the pattern: **every Execute ticket sits downstream of a resolved decision.**
 
 ### The watcher — how a landing reaches you
 
@@ -314,12 +378,27 @@ call is yours, here:
 | **Silent do-nothing** — exit 0, `is_error: false`, ticket open, no comment | **Retry**, prompt sharpened to name the missing artifact |
 | **Half-done** — comment but not closed, or closed with no comment | **Neither.** Finish the mechanical remainder yourself, no spawn. Flag only if the *work* is partial rather than the bookkeeping |
 | **Wedged** — killed after the heartbeat flatlined | **Triage on the tails.** Died mid-API-call → bad roll → retry. Looping the same action → wall → flag. Never really started (auth, bad path) → wall → flag |
-| **Coherently wrong** — artifact complete, answer collides with a prior decision | **Reopen, comment what it collides with, flag. Never retry** |
+| **Coherently wrong** — artifact complete, answer collides with a prior decision | **Reopen, comment what it collides with, flag. Never retry** — *except* a complete-but-inadequate artifact at **Execute**, which retries **once at Heavy** |
 
 Wrong never retries because new information may legitimately change Raj's mind — he
 might take the new answer or hold the old one, and you cannot know which. So it goes
 back to him with the collision named, never re-rolled and never resolved on your own
 judgment. The gist does not reach the map either way; you append only after verifying.
+
+**The one licensed exception — escalation is a misclassification remedy, not a failure
+remedy.** It fires on exactly one condition: an Execute run produced a complete artifact
+that is inadequate. That is evidence the Execute gate was called wrong, so the ticket
+re-fires **once at Heavy**. The rule above was written when every run was Opus and the
+model was therefore a constant — a re-roll at the same configuration is the same bet. Once
+the tier can change, a re-fire is a materially different bet, which is what narrowly
+licenses this and nothing else. It applies at Execute only, and it does not raise the one-
+retry maximum.
+
+**Every other failure class retries at the same tier, or does not retry.** In particular,
+**budget death never escalates**: Tail burns the cap faster, so escalating there is
+counting to a tip. **Heavy → Tail never fires automatically** either — Opus medium failing
+does not imply Opus high succeeding, and it costs more. Tail is reached only by an explicit
+per-map override.
 
 **A non-empty `permission_denials` is not a failure signal.** A real successful run on
 disk carries one. Denials count only when no artifact landed.

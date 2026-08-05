@@ -30,10 +30,19 @@ param(
     [Parameter(Mandatory = $true, ParameterSetName = 'Inline')][string]$Prompt,
     [Parameter(Mandatory = $true, ParameterSetName = 'File')][string]$PromptFile,
     [string]$WorktreeName,
-    [double]$BudgetUsd = 2.0
+    [ValidateSet('Heavy', 'Execute', 'Tail')][string]$Tier = 'Heavy',
+    [double]$BudgetUsd = 5.0
 )
 
 $ErrorActionPreference = 'Stop'
+
+# Tiers are named pairs, not two independent dials (#51). Both flags go on every
+# dispatch explicitly - an inherited setting is not a recorded one.
+$tierFlags = @{
+    Heavy   = @{ Model = 'claude-opus-5';   Effort = 'medium' }
+    Execute = @{ Model = 'claude-sonnet-5'; Effort = 'medium' }
+    Tail    = @{ Model = 'claude-opus-5';   Effort = 'high'   }
+}[$Tier]
 
 if ($TicketUrl -notmatch '/issues/(\d+)') { throw "Not a GitHub issue URL: $TicketUrl" }
 $ticketNumber = $Matches[1]
@@ -105,6 +114,8 @@ $claudeArgs = @(
     '--worktree', $WorktreeName
     '--permission-mode', 'bypassPermissions'
     '--max-budget-usd', $BudgetUsd
+    '--model', $tierFlags.Model
+    '--effort', $tierFlags.Effort
     '--disallowedTools'
 ) + $denied
 # NOTE: --bare is banned (#7)  -  it forces API-key auth. Plain `claude -p` keeps
@@ -121,7 +132,7 @@ $proc = Start-Process -FilePath 'claude' -ArgumentList $cmdLine `
     -RedirectStandardInput $promptPath `
     -RedirectStandardOutput $resultFile -RedirectStandardError $stderrFile
 
-[pscustomobject]@{
+$record = [pscustomobject]@{
     Ticket       = $TicketUrl
     WorktreeName = $WorktreeName
     WorktreePath = Join-Path $RepoPath ".claude\worktrees\$WorktreeName"
@@ -130,4 +141,16 @@ $proc = Start-Process -FilePath 'claude' -ArgumentList $cmdLine `
     StderrFile   = $stderrFile
     PromptFile   = $promptPath
     BudgetUsd    = $BudgetUsd
+    Tier         = $Tier
+    Model        = $tierFlags.Model
+    Effort       = $tierFlags.Effort
 }
+
+# The dispatch record, as a sidecar. claude owns $resultFile (it is that process's
+# stdout), so the tier, the model, the effort and the cap actually in force are written
+# beside it instead - #55 found none of them survive the run today, and a rubric that
+# leaves no trace can never be checked against its own outcomes.
+Set-Content -LiteralPath ($resultFile -replace '\.json$', '.dispatch.json') `
+    -Value ($record | ConvertTo-Json) -Encoding UTF8
+
+$record
