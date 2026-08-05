@@ -1,0 +1,32 @@
+Write a PowerShell script `frontier.ps1` in this directory.
+
+It takes one parameter, -Path, the path to a Wayfinder map markdown file (map.md in this
+directory is an example). It prints, to stdout, the number of every ticket that is READY:
+one bare integer per line, ascending, no other output.
+
+A ticket line looks like this, at any indentation:
+
+    - [ ] #12 Some title (blocked by: #3, #7)
+    - [x] #3 Some finished title
+
+`- [x]` means the ticket is done; `- [ ]` means it is not. The `(blocked by: ...)` part is
+optional and may list one or more ticket numbers.
+
+A ticket is READY when it is not done AND every ticket it is blocked by is done.
+
+Things the file will throw at you, all of which your script must survive:
+
+- The file contains other sections (for example `## Decisions`) whose bullets mention `#N`
+  but are NOT ticket lines. Only lines matching the ticket-line shape above are tickets.
+- A blocker may name a ticket number that does not appear anywhere in the file as a ticket.
+  An absent blocker is NOT done, so it keeps the ticket blocked.
+- Ticket titles may themselves contain `#N` references and struck-through `~~#N~~` text.
+  Those are part of the title, not blockers and not tickets.
+- Checklist bullets that carry no `#N` at all are not tickets and must be ignored.
+
+Your script will be run exactly as:
+
+    pwsh -NoProfile -File frontier.ps1 -Path <some map file>
+
+and graded on its stdout against several map files, including ones you have not seen.
+Write only frontier.ps1. Do not create any other file.

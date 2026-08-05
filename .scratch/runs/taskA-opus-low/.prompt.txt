@@ -1,0 +1,15 @@
+This directory holds two PowerShell scripts and RULE.md, which states the four clauses of
+"the PowerShell rule" that this project's scripts must obey.
+
+Audit map-sync.ps1 and spawn-agent.ps1 against RULE.md.
+
+Write your findings to ANSWER.md in this directory. For each violation give, on one line:
+
+  <file>:<line> | clause <N> | <the mechanism, one sentence> | <a concrete input that fails>
+
+Rules for the audit:
+- Report only genuine violations of RULE.md. Some code in these files is correct and is there
+  to be left alone; flagging correct code counts against you.
+- "clause <N>" is the clause number from RULE.md (1, 2, 3 or 4).
+- The mechanism must say what actually goes wrong at runtime, not restate the clause.
+- Do not fix anything. Do not modify the scripts. Write only ANSWER.md.

@@ -1,0 +1,317 @@
+[
+ {
+  "cell": "taskB-opus-low",
+  "passed": 2,
+  "of": 2,
+  "cases": [
+   {
+    "map": "map.md",
+    "pass_": true,
+    "got": [
+     2,
+     4,
+     8
+    ],
+    "want": [
+     2,
+     4,
+     8
+    ],
+    "err": ""
+   },
+   {
+    "map": "map2.md",
+    "pass_": true,
+    "got": [
+     10,
+     14,
+     16
+    ],
+    "want": [
+     10,
+     14,
+     16
+    ],
+    "err": ""
+   }
+  ],
+  "extra_files": [],
+  "cost": 0.4212,
+  "turns": 5,
+  "models": [
+   "claude-opus-5"
+  ],
+  "sid": "37db8a96-14d6-4b8c-894c-0b26bf4f45de",
+  "terminal": "completed"
+ },
+ {
+  "cell": "taskB-opus-low-rep2b",
+  "passed": 2,
+  "of": 2,
+  "cases": [
+   {
+    "map": "map.md",
+    "pass_": true,
+    "got": [
+     2,
+     4,
+     8
+    ],
+    "want": [
+     2,
+     4,
+     8
+    ],
+    "err": ""
+   },
+   {
+    "map": "map2.md",
+    "pass_": true,
+    "got": [
+     10,
+     14,
+     16
+    ],
+    "want": [
+     10,
+     14,
+     16
+    ],
+    "err": ""
+   }
+  ],
+  "extra_files": [],
+  "cost": 0.3146,
+  "turns": 5,
+  "models": [
+   "claude-opus-5"
+  ],
+  "sid": "06c360b2-b515-427e-bda8-c0e5f1cb595d",
+  "terminal": "completed"
+ },
+ {
+  "cell": "taskB-opus-low-rep3b",
+  "passed": 2,
+  "of": 2,
+  "cases": [
+   {
+    "map": "map.md",
+    "pass_": true,
+    "got": [
+     2,
+     4,
+     8
+    ],
+    "want": [
+     2,
+     4,
+     8
+    ],
+    "err": ""
+   },
+   {
+    "map": "map2.md",
+    "pass_": true,
+    "got": [
+     10,
+     14,
+     16
+    ],
+    "want": [
+     10,
+     14,
+     16
+    ],
+    "err": ""
+   }
+  ],
+  "extra_files": [],
+  "cost": 0.3167,
+  "turns": 7,
+  "models": [
+   "claude-opus-5"
+  ],
+  "sid": "c7692fa3-17d8-4ef3-bacb-86daeb03ef1c",
+  "terminal": "completed"
+ },
+ {
+  "cell": "taskB-sonnet-low",
+  "passed": 2,
+  "of": 2,
+  "cases": [
+   {
+    "map": "map.md",
+    "pass_": true,
+    "got": [
+     2,
+     4,
+     8
+    ],
+    "want": [
+     2,
+     4,
+     8
+    ],
+    "err": ""
+   },
+   {
+    "map": "map2.md",
+    "pass_": true,
+    "got": [
+     10,
+     14,
+     16
+    ],
+    "want": [
+     10,
+     14,
+     16
+    ],
+    "err": ""
+   }
+  ],
+  "extra_files": [],
+  "cost": 0.2248,
+  "turns": 6,
+  "models": [
+   "claude-sonnet-5"
+  ],
+  "sid": "f167e14f-0bea-4a79-93d3-ab1945636e28",
+  "terminal": "completed"
+ },
+ {
+  "cell": "taskB-sonnet-low-rep2",
+  "passed": 2,
+  "of": 2,
+  "cases": [
+   {
+    "map": "map.md",
+    "pass_": true,
+    "got": [
+     2,
+     4,
+     8
+    ],
+    "want": [
+     2,
+     4,
+     8
+    ],
+    "err": ""
+   },
+   {
+    "map": "map2.md",
+    "pass_": true,
+    "got": [
+     10,
+     14,
+     16
+    ],
+    "want": [
+     10,
+     14,
+     16
+    ],
+    "err": ""
+   }
+  ],
+  "extra_files": [],
+  "cost": 0.4594,
+  "turns": 12,
+  "models": [
+   "claude-sonnet-5"
+  ],
+  "sid": "5b668ef9-1e4f-4419-a52f-ef445ea1c4d9",
+  "terminal": "completed"
+ },
+ {
+  "cell": "taskB-sonnet-low-rep3",
+  "passed": 2,
+  "of": 2,
+  "cases": [
+   {
+    "map": "map.md",
+    "pass_": true,
+    "got": [
+     2,
+     4,
+     8
+    ],
+    "want": [
+     2,
+     4,
+     8
+    ],
+    "err": ""
+   },
+   {
+    "map": "map2.md",
+    "pass_": true,
+    "got": [
+     10,
+     14,
+     16
+    ],
+    "want": [
+     10,
+     14,
+     16
+    ],
+    "err": ""
+   }
+  ],
+  "extra_files": [],
+  "cost": 0.2525,
+  "turns": 8,
+  "models": [
+   "claude-sonnet-5"
+  ],
+  "sid": "28fd7ffc-2baa-4d22-8ada-da8fe0f262da",
+  "terminal": "completed"
+ },
+ {
+  "cell": "taskB-sonnet-low-rep4",
+  "passed": 2,
+  "of": 2,
+  "cases": [
+   {
+    "map": "map.md",
+    "pass_": true,
+    "got": [
+     2,
+     4,
+     8
+    ],
+    "want": [
+     2,
+     4,
+     8
+    ],
+    "err": ""
+   },
+   {
+    "map": "map2.md",
+    "pass_": true,
+    "got": [
+     10,
+     14,
+     16
+    ],
+    "want": [
+     10,
+     14,
+     16
+    ],
+    "err": ""
+   }
+  ],
+  "extra_files": [],
+  "cost": 0.2503,
+  "turns": 8,
+  "models": [
+   "claude-sonnet-5"
+  ],
+  "sid": "0a30630a-5ccd-44ce-afb8-9c7e9d710721",
+  "terminal": "completed"
+ }
+]

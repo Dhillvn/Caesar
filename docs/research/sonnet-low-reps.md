@@ -81,3 +81,8 @@ the ticket's n≥4 bar).** The Execute row in `skill/SKILL.md` should move
 from `medium` to `low`: `low` is cheaper than `medium` on the same model
 *and* cheaper than Opus at the same effort, with no grade cost measured
 anywhere in 14 cells across #56 and this ticket.
+
+**Not adopted.** Raj held Execute at `medium` on 2026-08-05. The cells here
+are sub-$0.45 toy fixtures; real tickets on this map ran $1.58–$2.85, so the
+discount is unproven at working length, and the rubric keeps one live dial.
+The measurement stands; the tier did not move.

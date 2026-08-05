@@ -1,0 +1,13 @@
+# Audit findings
+
+map-sync.ps1:27 | clause 2 | `$body` from `gh ... --jq .body` is captured into a variable, and multi-line stdout is captured by PowerShell as an array of lines, not one string; `Set-Content -Value $body -NoNewline` then joins that array with no separator, collapsing every line break in the body into one run-on line | any issue body containing more than one line (i.e. any body with a blank line or a second paragraph)
+
+map-sync.ps1:31 | clause 3 | `$existing` comes from `Get-Content $bodyFile` (no `-Raw`), so it is an array of lines; `[regex]::Matches($existing, '^## ')` applies the anchored regex to the array, where `^` never matches inside array elements after PowerShell's implicit array-to-string conversion, so the count is silently 0 or wrong regardless of real heading count | a body file with real `## ` headings still reports `$headingCount -lt 1` (or an unreliable count), so the “intact body” check is not actually checking anything
+
+map-sync.ps1:36 | clause 2 | `$body` is the array-of-lines captured at line 25 and is written back somewhere (used to build the new issue body); string-interpolating an array with `"$body`n..."` joins the elements with a single space (PowerShell's default array-to-string separator), destroying the original newlines before they're even pushed back | a multi-paragraph issue body — the pushed-back body ends up with all its original line breaks replaced by spaces
+
+map-sync.ps1:39 | clause 1 | the updated body (`$updated`, arbitrary-length text with spaces/newlines) is handed to `gh issue edit --body $updated` as an argv value instead of via `--body-file`/`-F` | a decision string or body containing a double quote, backtick, or long enough content to hit argv/quoting limits gets truncated or breaks the `gh` invocation
+
+map-sync.ps1:44 | clause 4 | the "did it land" check is `$after -like "*$Decision*"`, a substring/phrasing match against the fetched body rather than a structural check (e.g. heading count, line count, exact body equality) | a `$Decision` string that also appears elsewhere in an unrelated, corrupted, or partially-written body makes the check pass even though the actual write is wrong
+
+spawn-agent.ps1:36 | clause 1 | `$denyList` (`"Bash(git push:*) Bash(rm:*) Bash(gh pr merge:*)"`) contains unquoted internal spaces and is passed as a single array element to `-ArgumentList`; when Start-Process builds the child command line it is not quoted, so the `claude` CLI's own argv parsing splits it back into several separate tokens at the spaces | `--disallowedTools` ends up receiving only `Bash(git` as its value, with `push:*)`, `Bash(rm:*)`, `Bash(gh`, `pr`, `merge:*)` parsed as unrelated stray arguments — `rm` and `gh pr merge` are silently not denied
