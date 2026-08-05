@@ -1,2 +1,7 @@
 .claude/worktrees/
 .claude/caesar-runs/
+
+# Per-worktree experiment scratch (fixtures, cells, graders). Machine-bound and
+# often hundreds of files - a `git add -A` in a worktree swept 107 of them into a
+# PR on 2026-08-05. Never a deliverable; the report in docs/research/ is.
+.scratch/

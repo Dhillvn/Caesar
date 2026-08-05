@@ -1,1 +1,0 @@
-[33mWarning: claude.ai MCP server blocked by enterprise policy: claude.ai Canva[39m
