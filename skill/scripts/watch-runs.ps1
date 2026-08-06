@@ -55,6 +55,20 @@ function Emit([string]$Line) {
     [Console]::Out.Flush()
 }
 
+# Refuse a -RepoPath that does not exist, loudly and at once. Invoke-Pass opens with
+# `if (-not (Test-Path $logDir)) { return }`, so before this check a watcher aimed at a
+# path that can never exist polled in silence and looked perfectly healthy - which is
+# exactly how one ran for 75 minutes across two real landings and reported neither.
+# The realistic cause is quoting, not typos: the Monitor tool runs its command through
+# bash, and bash strips the backslashes from an unquoted Windows path, turning
+# C:\Users\rajdh\Projects\caesar into C:UsersrajdhProjectscaesar.
+# An existing repo with no dispatches yet still has no run directory, and that is a
+# healthy silence - so this checks the repo path, never the run directory.
+if ($RepoPath -and -not (Test-Path -LiteralPath $RepoPath -PathType Container)) {
+    Emit "WATCHER-BAD-REPOPATH $RepoPath -- no such directory, so no landing can ever be seen. Quote the path in the Monitor command; bash strips backslashes from an unquoted Windows path."
+    exit 1
+}
+
 # The only progress signal a running centurion has: `claude -p` writes its result JSON
 # once, at the very end, but the transcript .jsonl mtime advances while it works.
 # Derivation lifted from inspect-run.ps1 so both read the same heartbeat.
@@ -160,6 +174,21 @@ function Invoke-Pass([bool]$Silent) {
 # three states against a temp dir and asserts each is named. It cannot cover the wake
 # itself - that is the Monitor tool's, and is proved by dogfooding.
 if ($SelfTest) {
+    # Run a pass out-of-process with stdout REDIRECTED, which is the shape the Monitor
+    # tool uses and the only shape in which the buffering defect is visible. Every
+    # argument is quoted: Start-Process joins ArgumentList on spaces with no quoting of
+    # its own, so an unquoted temp path with a space silently splits into two arguments.
+    function Invoke-SelfTestPass([string[]]$Arguments) {
+        $o = [System.IO.Path]::GetTempFileName()
+        try {
+            $all = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $PSCommandPath) + $Arguments
+            $line = ($all | ForEach-Object { '"' + ($_ -replace '"', '\"') + '"' }) -join ' '
+            Start-Process -FilePath 'powershell' -NoNewWindow -Wait `
+                -ArgumentList $line -RedirectStandardOutput $o | Out-Null
+            @(Get-Content -LiteralPath $o | Where-Object { $_ -ne '' })
+        } finally { Remove-Item -LiteralPath $o -Force -ErrorAction SilentlyContinue }
+    }
+
     $tmp = Join-Path ([System.IO.Path]::GetTempPath()) "watch-runs-selftest-$(Get-Random)"
     $runs = New-Item -ItemType Directory -Force -Path (Join-Path $tmp '.claude\caesar-runs')
     try {
@@ -204,7 +233,10 @@ if ($SelfTest) {
         Write-Dispatch (Join-Path $runs 'ticket-6-fff-20260101-000000.dispatch.json') @{
             ProcessId = $PID; StderrFile = 'nonexistent.err' }
 
-        $out = & $PSCommandPath -RepoPath $tmp -Once
+        # Out-of-process, with stdout redirected - the same shape the Monitor tool uses.
+        # Emit writes to the console writer, not the pipeline, so an in-process `&` call
+        # captures nothing; and testing in-process is what let the buffering defect ship.
+        $out = @(Invoke-SelfTestPass @('-RepoPath', $tmp, '-Once'))
         $want = @(
             @{ Pattern = '^LANDED ticket-1-aaa\s+GIST: a judgeable sentence\.$'; Name = 'landed with gist' }
             @{ Pattern = '^ERRORED ticket-2-bbb\s+terminal_reason=budget'; Name = 'errored' }
@@ -223,7 +255,7 @@ if ($SelfTest) {
         # Defect B: a re-armed watcher backfills the corpse silently, same as a landing.
         # The two timer-driven alarms are not backfilled and must still speak - they
         # describe runs that are still open, and suppressing those is the missed landing.
-        $rearmOut = @(& $PSCommandPath -RepoPath $tmp -Once -Rearm)
+        $rearmOut = @(Invoke-SelfTestPass @('-RepoPath', $tmp, '-Once', '-Rearm'))
         $rearmWant = @('^NO-TRANSCRIPT ticket-4-ddd', '^NO-TRANSCRIPT ticket-6-fff')
         if ($rearmOut -match '^DIED-AT-SPAWN') { Write-Output '  FAIL re-arm re-reports a dead run'; $fail++ }
         elseif ($rearmOut -match '^LANDED|^ERRORED') { Write-Output '  FAIL re-arm re-reports a landing'; $fail++ }
@@ -233,6 +265,42 @@ if ($SelfTest) {
             Write-Output "  FAIL re-arm should say only the two open runs, said: $($rearmOut -join ' | ')"; $fail++
         }
         else { Write-Output '  ok   re-arm replays nothing terminal, only the runs still open' }
+
+        # Defect C: a watcher aimed at a path that cannot exist must refuse, not idle.
+        # The mangled path is the real one bash produced from an unquoted argument.
+        $bad = @(Invoke-SelfTestPass @('-RepoPath', 'C:UsersrajdhProjectscaesar', '-Once'))
+        if ($bad -match '^WATCHER-BAD-REPOPATH') { Write-Output '  ok   a nonexistent RepoPath is refused out loud, not polled in silence' }
+        else { Write-Output "  FAIL bad RepoPath said nothing, it would poll forever: $($bad -join ' | ')"; $fail++ }
+
+        # Defect D: a LIVE watcher's line must reach a redirected stdout before it exits.
+        # A one-shot pass flushes on exit whatever writer it used, so -Once cannot show
+        # this - persistence is the discriminator, not redirection. Poll fast so the
+        # check costs seconds rather than a poll interval.
+        $liveRuns = New-Item -ItemType Directory -Force -Path (Join-Path $tmp 'live\.claude\caesar-runs')
+        $liveOut = Join-Path $tmp 'live-stdout.txt'
+        New-Item -ItemType File -Path $liveOut -Force | Out-Null
+        $args2 = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $PSCommandPath,
+                   '-RepoPath', (Join-Path $tmp 'live'), '-PollSeconds', '1')
+        $line2 = ($args2 | ForEach-Object { '"' + ($_ -replace '"', '\"') + '"' }) -join ' '
+        $watcher = Start-Process -FilePath 'powershell' -NoNewWindow -PassThru `
+            -ArgumentList $line2 -RedirectStandardOutput $liveOut
+        try {
+            Start-Sleep -Seconds 3   # let the silent backfill pass finish first
+            '{"is_error":false,"result":"GIST: a live landing."}' |
+                Set-Content -LiteralPath (Join-Path $liveRuns 'ticket-7-ggg-20260101-000000.json')
+            $seen = $false
+            foreach ($i in 1..20) {
+                Start-Sleep -Seconds 1
+                if ((Get-Content -LiteralPath $liveOut -ErrorAction SilentlyContinue) -match '^LANDED ticket-7-ggg') {
+                    $seen = $true; break
+                }
+            }
+            if ($seen) { Write-Output '  ok   a live watcher''s landing reaches redirected stdout without exiting' }
+            else { Write-Output '  FAIL live watcher emitted nothing - Emit is buffering again'; $fail++ }
+        } finally {
+            Stop-Process -Id $watcher.Id -Force -ErrorAction SilentlyContinue
+        }
+
         Write-Output ''
         Write-Output $(if ($fail) { "SELFTEST FAILED ($fail)" } else { 'SELFTEST PASSED' })
         if ($fail) { exit 1 }
