@@ -14,9 +14,25 @@ AFK tickets yourself by dispatching centurions, and interrupting him only for th
 types that genuinely need a human. (**Centurion** is a spawned agent, **scout** one sent on
 a research ticket — see *Voice* below.)
 
-Read `C:\Users\rajdh\.claude\skills\wayfinder\SKILL.md` for the map format and ticket
-semantics. You carry the tracker operations yourself (below), so target repos need no
-tracker doc of their own.
+Read the **`wayfinder`** skill's own `SKILL.md` for the map format and ticket semantics.
+Resolve it **by name, never by path**. Wayfinder sets `disable-model-invocation: true`, so
+the Skill tool refuses it — ask the harness where its plugin is installed instead:
+
+```powershell
+claude plugin list --json | ConvertFrom-Json |
+  ForEach-Object { Join-Path $_.installPath 'skills\wayfinder\SKILL.md' } |
+  Where-Object { Test-Path $_ }
+```
+
+`installPath` is the version the harness is actually using. Never write a literal path to
+Wayfinder and never glob the plugin cache: cache paths carry a version segment and old
+version directories are never removed, so a literal either breaks on the next upstream
+release or — worse, and silently — keeps resolving to a frozen copy while you believe you
+are reading current Wayfinder. If the command returns nothing, Wayfinder is not installed;
+say so rather than guessing at a path.
+
+You carry the tracker operations yourself (below), so target repos need no tracker doc of
+their own.
 
 ## Invocation and roles
 
@@ -256,7 +272,7 @@ overridable per-map in the map's own **Notes** section.
 
 A centurion inherits everything an interactive session has: both `CLAUDE.md` files, the
 full skill list, the user-level SessionStart hooks. `--worktree` changes only the working
-directory ([#72](../docs/research/headless-inheritance.md), four probes through the real
+directory ([#72](https://github.com/Dhillvn/caesar/blob/main/docs/research/headless-inheritance.md), four probes through the real
 spawn path). So the skill block is an **override layer, not a re-listing** — naming a
 skill the agent already holds is dead weight in every dispatch. Three rules, in order:
 
@@ -269,7 +285,7 @@ whether `ponytail` changes a headless agent's output at all has never been measu
 **2. Never retype an exclusion — the spawn script carries them.** The one banned skill is
 `claude-api`, and the ban lives in the guardrail heredoc in
 `scripts/spawn-ticket-agent.ps1`, where it reaches every centurion and cannot be
-forgotten. **Ban nothing else.** [#73](../docs/research/skill-cost-inventory.md) measured
+forgotten. **Ban nothing else.** [#73](https://github.com/Dhillvn/caesar/blob/main/docs/research/skill-cost-inventory.md) measured
 all 119 `SKILL.md` files on the machine against several hundred real loads: `SKILL.md`
 size predicts injection at 0.94×, directory size does not predict it at all, and the
 largest ordinary skill is 45 KB — about 6% of the $5.00 cap. `claude-api` injects 898 KB
@@ -280,8 +296,9 @@ skill" banned cheap skills for nothing and is retired.
 
 For a *new* skill, the test is structural, not size: no `SKILL.md` in its directory, or
 observed injection ≈ its whole directory size. Threshold **100 KB injected**. Re-run
-`scripts/skill_cost.py` after a Claude Code upgrade — `claude-api`'s bundle grew 799 KB →
-898 KB in one patch release. Only Raj adds to the ban; a centurion that wants a banned
+[`scripts/skill_cost.py`](https://github.com/Dhillvn/caesar/blob/main/scripts/skill_cost.py)
+(the Caesar repo's own `scripts/`, not this skill's) after a Claude Code upgrade:
+`claude-api`'s bundle grew 799 KB → 898 KB in one patch release. Only Raj adds to the ban; a centurion that wants a banned
 skill reads its files off disk.
 
 **3. Name only what the ticket needs and the agent would not reach for.** This is the
@@ -295,7 +312,7 @@ per-ticket judgment and the only part you write by hand — one line, no rationa
 | research past ~5 sources | **nothing — read the sources directly** |
 
 **The NotebookLM expectation is retired, not forgotten.**
-[#74](../docs/research/notebooklm-headless.md) measured it from inside a real centurion:
+[#74](https://github.com/Dhillvn/caesar/blob/main/docs/research/notebooklm-headless.md) measured it from inside a real centurion:
 query and ingest are both programmatically capable and neither is blocked by the deny
 list, but both ride browser cookies Google expires server-side (~10 days observed),
 renewable only by a human signing into a Chromium window — `auth refresh` cannot do it
@@ -348,7 +365,7 @@ Caesar itself, the hardest role on the machine, at Opus medium and finds it suff
 Published high-effort wins are measured on hard benchmark tasks, not on deliberately
 bite-sized tickets. Holding effort at medium also keeps the rubric to one live dial.
 
-[#64](../docs/research/sonnet-low-reps.md) measured Sonnet-low as 8.8–15.4% cheaper than
+[#64](https://github.com/Dhillvn/caesar/blob/main/docs/research/sonnet-low-reps.md) measured Sonnet-low as 8.8–15.4% cheaper than
 Opus-low at identical (100%) grade, and proposed dropping Execute to `low`. **Raj held it
 at `medium`** on 2026-08-05: the fixtures were sub-$0.45 toy cells against real tickets at
 $1.58–$2.85, so the saving is unproven at working length, and one live dial is worth more
