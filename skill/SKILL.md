@@ -256,7 +256,9 @@ its own git worktree. The script carries the flag set and the deny list; do not 
 that command by hand.
 
 **Composing a dispatch prompt** — the ordered shape it takes, and what the guardrail frame
-already carries: [`references/prompt-shape.md`](references/prompt-shape.md).
+already carries. Read it before you write one; a prompt shaped from memory restates the frame
+and leaves the centurion with no bound of its own:
+[`references/prompt-shape.md`](references/prompt-shape.md).
 
 The centurion **posts its own resolution comment and closes its own ticket**, then prints a
 `GIST:` line. You read only the gist and append it to the map. This keeps your context
@@ -600,6 +602,10 @@ Ready PRs **queue and land at a break in the grill** — interrupting a grill to
 a merge is how a spot-check degrades into a rubber stamp.
 
 Post-merge, if Raj says revert: revert on the spot, then re-ticket the redo.
+
+**Pointers into `references/`** — the standard one meets before it ships: what it states, how
+its leading word is chosen, and how its strength scales with the cost of a miss. Read it
+before you write or reword one: [`references/pointer-standard.md`](references/pointer-standard.md).
 
 ## When Raj vetoes a closed decision
 
