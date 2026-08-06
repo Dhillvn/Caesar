@@ -405,9 +405,18 @@ have to ask.**
 
 ```
 Monitor(command: 'powershell -NoProfile -ExecutionPolicy Bypass -File
-        <skill>\scripts\watch-runs.ps1 -RepoPath <repo>',
+        "<skill>\scripts\watch-runs.ps1" -RepoPath "<repo>"',
         description: 'centurion landings', persistent: true)
 ```
+
+**Both Windows paths are quoted, and that is load-bearing.** Monitor runs its command
+through bash, which strips the backslashes out of an unquoted Windows path — so
+`-RepoPath C:\Users\rajdh\Projects\caesar` arrives as `C:UsersrajdhProjectscaesar`, and a
+watcher aimed there can never see a landing. The script now refuses a `-RepoPath` that
+does not exist, emitting `WATCHER-BAD-REPOPATH` and exiting non-zero; before that it
+polled the missing directory in silence and looked healthy for 75 minutes across two real
+landings. **If you see `WATCHER-BAD-REPOPATH`, re-arm with the path quoted** — nothing
+else is wrong.
 
 One watcher covers every centurion on the machine, however many maps dispatched them — do
 not arm one per ticket. It backfills silently on start, so re-arming after a crash replays
