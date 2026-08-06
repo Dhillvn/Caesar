@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
-  Frozen watcher. Emits one line per centurion event - landed, errored, gone quiet -
-  so Caesar is woken by the harness instead of waiting to be asked.
+  Frozen watcher. Emits one line per centurion event - landed, errored, died at spawn,
+  gone quiet - so Caesar is woken by the harness instead of waiting to be asked.
 
 .DESCRIPTION
   Frozen for the reason the spawn and the sweep are: correctness IS the filter set.
@@ -35,7 +35,11 @@ param(
     [int]$QuietMinutes = 30,
     [int]$RecheckMinutes = 15,
     [int]$PollSeconds = 20,
-    [switch]$Once
+    [switch]$Once,
+    # -Once -Rearm reproduces exactly what the persistent watcher does when it starts:
+    # one silent backfill pass, then one reporting pass. Only the self-test uses it,
+    # to prove a re-arm replays nothing.
+    [switch]$Rearm
 )
 
 $ErrorActionPreference = 'Stop'
@@ -91,6 +95,36 @@ function Invoke-Pass([bool]$Silent) {
             continue
         }
 
+        # Dead PID + empty result + no transcript is not "quiet", it is finished and
+        # failed, and it is knowable on the next poll instead of at the 30m timer (#94).
+        # This sits ABOVE the -Silent bail on purpose: a re-armed watcher must adopt a
+        # dead run as already-reported exactly as it adopts a landing, otherwise the
+        # same corpse re-alarms every RecheckMinutes forever (#94 defect B).
+        # PID reuse can only make a dead run look alive, never the reverse, and that
+        # falls back to the old NO-TRANSCRIPT path - so no start-time check.
+        $dispatchFile = $f.FullName -replace '\.json$', '.dispatch.json'
+        if (Test-Path -LiteralPath $dispatchFile) {
+            $d = $null
+            try { $d = [IO.File]::ReadAllText($dispatchFile) | ConvertFrom-Json } catch { $d = $null }
+            if ($d -and $d.ProcessId -and
+                -not (Get-Process -Id $d.ProcessId -ErrorAction SilentlyContinue) -and
+                $null -eq (Get-HeartbeatAge $name)) {
+                $reported[$f.Name] = 'done'
+                if ($Silent) { continue }
+                # One event = one notification line, so the tail is the last non-empty
+                # stderr line with its whitespace collapsed, never the raw block.
+                $tail = 'stderr empty'
+                if ($d.StderrFile -and (Test-Path -LiteralPath $d.StderrFile)) {
+                    $last = @(Get-Content -LiteralPath $d.StderrFile -Tail 40 -ErrorAction SilentlyContinue) |
+                        Where-Object { $_.Trim() } | Select-Object -Last 1
+                    if ($last) { $tail = 'stderr: ' + ($last.Trim() -replace '\s+', ' ') }
+                }
+                if ($tail.Length -gt 200) { $tail = $tail.Substring(0, 200) + '...' }
+                Emit "DIED-AT-SPAWN $name  pid $($d.ProcessId) is gone, result file empty, session never wrote a turn -- $tail"
+                continue
+            }
+        }
+
         if ($Silent) { continue }
 
         # Still running. Quiet is not dead and not a flag - SKILL.md: at 30 minutes you
@@ -139,12 +173,45 @@ if ($SelfTest) {
         New-Item -ItemType File -Path $never | Out-Null
         (Get-Item $never).CreationTime = (Get-Date).AddMinutes(-($QuietMinutes + 10))
 
+        # A PID nothing owns. Probed rather than assumed - a hardcoded number is a test
+        # that passes for the wrong reason the day something happens to hold it.
+        $deadPid = 1
+        do { $deadPid = Get-Random -Minimum 100000 -Maximum 999999 }
+        while (Get-Process -Id $deadPid -ErrorAction SilentlyContinue)
+
+        # Sidecars go in BOM-less, the same way spawn-ticket-agent.ps1 writes them:
+        # PS 5.1's `Set-Content -Encoding UTF8` prepends EF BB BF and ConvertFrom-Json
+        # over [IO.File]::ReadAllText then dies on it.
+        function Write-Dispatch($Path, $Object) {
+            [System.IO.File]::WriteAllText($Path, ($Object | ConvertTo-Json),
+                (New-Object System.Text.UTF8Encoding $false))
+        }
+
+        # Defect A: died in the first second. Deliberately NOT aged past the quiet timer -
+        # if this only fires because the clock ran, the fix did nothing.
+        $died = Join-Path $runs 'ticket-5-eee-20260101-000000.json'
+        New-Item -ItemType File -Path $died | Out-Null
+        $diedErr = Join-Path $runs 'ticket-5-eee-20260101-000000.err'
+        Set-Content -LiteralPath $diedErr -Value @('', 'fatal: worktree creation refused')
+        Write-Dispatch (Join-Path $runs 'ticket-5-eee-20260101-000000.dispatch.json') @{
+            ProcessId = $deadPid; StderrFile = $diedErr }
+
+        # A live PID with an empty result is still running, whatever the clock says. It
+        # must keep the old NO-TRANSCRIPT wording and never be called dead.
+        $live = Join-Path $runs 'ticket-6-fff-20260101-000000.json'
+        New-Item -ItemType File -Path $live | Out-Null
+        (Get-Item $live).CreationTime = (Get-Date).AddMinutes(-($QuietMinutes + 10))
+        Write-Dispatch (Join-Path $runs 'ticket-6-fff-20260101-000000.dispatch.json') @{
+            ProcessId = $PID; StderrFile = 'nonexistent.err' }
+
         $out = & $PSCommandPath -RepoPath $tmp -Once
         $want = @(
             @{ Pattern = '^LANDED ticket-1-aaa\s+GIST: a judgeable sentence\.$'; Name = 'landed with gist' }
             @{ Pattern = '^ERRORED ticket-2-bbb\s+terminal_reason=budget'; Name = 'errored' }
             @{ Pattern = '^LANDED-NO-GIST ticket-3-ccc'; Name = 'clean exit, no GIST' }
-            @{ Pattern = '^NO-TRANSCRIPT ticket-4-ddd'; Name = 'never started' }
+            @{ Pattern = '^NO-TRANSCRIPT ticket-4-ddd'; Name = 'never started, no dispatch sidecar' }
+            @{ Pattern = '^DIED-AT-SPAWN ticket-5-eee.+stderr: fatal: worktree creation refused$'; Name = 'died at spawn, reported off the clock with its stderr tail' }
+            @{ Pattern = '^NO-TRANSCRIPT ticket-6-fff'; Name = 'live pid past the timer is quiet, not dead' }
         )
         $fail = 0
         foreach ($w in $want) {
@@ -152,6 +219,20 @@ if ($SelfTest) {
             else { Write-Output "  FAIL $($w.Name)"; $fail++ }
         }
         if ($out.Count -ne $want.Count) { Write-Output "  FAIL expected $($want.Count) lines, got $($out.Count)"; $fail++ }
+
+        # Defect B: a re-armed watcher backfills the corpse silently, same as a landing.
+        # The two timer-driven alarms are not backfilled and must still speak - they
+        # describe runs that are still open, and suppressing those is the missed landing.
+        $rearmOut = @(& $PSCommandPath -RepoPath $tmp -Once -Rearm)
+        $rearmWant = @('^NO-TRANSCRIPT ticket-4-ddd', '^NO-TRANSCRIPT ticket-6-fff')
+        if ($rearmOut -match '^DIED-AT-SPAWN') { Write-Output '  FAIL re-arm re-reports a dead run'; $fail++ }
+        elseif ($rearmOut -match '^LANDED|^ERRORED') { Write-Output '  FAIL re-arm re-reports a landing'; $fail++ }
+        # -not (array -match p), never (array -notmatch p): over an array -notmatch is a
+        # filter, so it returns every OTHER line and reads as a failure on a clean pass.
+        elseif ($rearmOut.Count -ne 2 -or ($rearmWant | Where-Object { -not ($rearmOut -match $_) })) {
+            Write-Output "  FAIL re-arm should say only the two open runs, said: $($rearmOut -join ' | ')"; $fail++
+        }
+        else { Write-Output '  ok   re-arm replays nothing terminal, only the runs still open' }
         Write-Output ''
         Write-Output $(if ($fail) { "SELFTEST FAILED ($fail)" } else { 'SELFTEST PASSED' })
         if ($fail) { exit 1 }
@@ -161,7 +242,11 @@ if ($SelfTest) {
 
 # -Once skips the backfill: a one-shot diagnostic pass is asked to report what is there,
 # not to suppress it.
-if ($Once) { Invoke-Pass $false; return }
+if ($Once) {
+    if ($Rearm) { Invoke-Pass $true }
+    Invoke-Pass $false
+    return
+}
 
 Invoke-Pass $true
 while ($true) {
