@@ -124,12 +124,14 @@ if the link is never followed.
 wrong tier, expensive but visible and reversible.
 
 ```
-**Which tier a ticket takes** — the dispatch rubric: Execute, Heavy, HITL, and what each
-does to the concurrency cap. Read it before you dispatch and before you hand a ticket back:
+**Which tier a ticket takes** — the dispatch rubric: Heavy or Execute, the gate that
+separates them, and the one licensed escalation. Read it before you dispatch, and before you
+re-fire a run that failed:
 [`references/dispatch-rubric.md`](references/dispatch-rubric.md).
 ```
 
-Two branches, both real — dispatch and handback take different paths through the rubric.
+Two branches, both real — a first dispatch and a re-fire take different paths through the
+rubric.
 
 **Voice** — *naming*: the cost of a miss is a report in flat prose, which is cosmetic.
 
