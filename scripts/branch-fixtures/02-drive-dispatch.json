@@ -1,0 +1,40 @@
+{
+  "id": "drive-dispatch",
+  "branch": "Drive, with a dispatch on the frontier",
+  "situation": "The map's frontier holds one unblocked, unassigned, unlabelled-for-HITL AFK ticket. The session is not asked whether it would dispatch; the only takeable work on the map is a dispatch, so composing one is the loop's next step.",
+  "map": {
+    "title": "Get the run logs readable from a phone",
+    "body": "## Destination\n\nA decision on how Caesar's run records reach Raj when he is away from the machine, and the one change that implements it.\n\n## Decisions so far\n\n_None yet._\n\n## Not yet specified\n\n- Whether the logs go to a hosted service at all, or stay on the machine behind a tunnel.\n\n## Notes\n\nFixture map. Created by scripts/branch-harness.ps1. Safe to close.\n"
+  },
+  "tickets": [
+    {
+      "key": "t1",
+      "title": "Survey the options for getting a local log directory readable remotely",
+      "labels": ["wayfinder:research"],
+      "body": "Find out what the realistic options are for reading a local `.claude/caesar-runs/` directory from a phone, and what each costs in setup and in ongoing exposure.\n\n## Done when\n\n- A short written comparison exists on this ticket.\n- One option is recommended, with the reason.\n\nFixture ticket. Created by scripts/branch-harness.ps1. Safe to close.\n",
+      "assign": false,
+      "close": false,
+      "comment": null,
+      "blocked_by": []
+    },
+    {
+      "key": "t2",
+      "title": "Decide the exposure boundary for remote log access",
+      "labels": ["wayfinder:grilling"],
+      "body": "Blocked until the survey lands.\n\nFixture ticket. Created by scripts/branch-harness.ps1. Safe to close.\n",
+      "assign": false,
+      "close": false,
+      "comment": null,
+      "blocked_by": ["t1"]
+    }
+  ],
+  "invocation": "Drive this Wayfinder map: {map_url}",
+  "expect_reads": [
+    "references/prompt-shape.md"
+  ],
+  "expect_markers": [
+    "dispatch|centurion|scout",
+    "heavy|execute|tier"
+  ],
+  "notes": "This is the only branch that today's SKILL.md points at a reference file for. If prompt-shape.md does not appear in the read list here, the observation itself is broken, not the skill."
+}
