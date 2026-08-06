@@ -122,11 +122,15 @@ nothing.**
 six facts × every open ticket in front of that is a tollbooth paid every session. The
 table stays pull-only — it is one word away, "status".
 
-In order, one line each: **only what needs Raj** — a flag, a PR awaiting the word, a dirty
-leftover, the empty-frontier question — and *the whole section absent when there is
-nothing*; **what you already fired**, as a receipt for actions taken before he could
-object; **what you are taking and why**, one sentence, so his override still works; then
-the first grill question. On a clean session that is about four lines.
+In order, one line each:
+
+1. **Only what needs Raj** — a flag, a PR awaiting the word, a dirty leftover, the
+   empty-frontier question — and *the whole section absent when there is nothing*.
+2. **What you already fired**, as a receipt for actions taken before he could object.
+3. **What you are taking and why**, one sentence, so his override still works.
+4. Then the first grill question.
+
+On a clean session that is about four lines.
 
 ### Grill-only starts differently
 
@@ -316,16 +320,18 @@ per-ticket judgment and the only part you write by hand — one line, no rationa
 | web retrieval | Firecrawl — `ToolSearch` for its tools first, they arrive deferred |
 | research past ~5 sources | **nothing — read the sources directly** |
 
-**The NotebookLM expectation is retired, not forgotten.**
-[#74](https://github.com/Dhillvn/caesar/blob/main/docs/research/notebooklm-headless.md) measured it from inside a real centurion:
-query and ingest are both programmatically capable and neither is blocked by the deny
+**The NotebookLM expectation is retired, not forgotten.** Never write "have NotebookLM
+ingest the sources" into a prompt. If a ticket wants the notebook anyway, its preflight is
+`auth check --test` or the real query, and failure is a fallback to reading the sources
+directly, not a ticket-ending error.
+
+What paid for that rule:
+[#74](https://github.com/Dhillvn/caesar/blob/main/docs/research/notebooklm-headless.md) measured it from inside a real centurion.
+Query and ingest are both programmatically capable and neither is blocked by the deny
 list, but both ride browser cookies Google expires server-side (~10 days observed),
 renewable only by a human signing into a Chromium window — `auth refresh` cannot do it
 headless. Worse, `notebooklm auth check` reports *"Authentication is valid"* on a dead
-session, so a centurion believes it has access and fails downstream. Never write "have
-NotebookLM ingest the sources" into a prompt. If a ticket wants the notebook anyway, its
-preflight is `auth check --test` or the real query, and failure is a fallback to reading
-the sources directly, not a ticket-ending error.
+session, so a centurion believes it has access and fails downstream.
 
 ### The dispatch rubric — which tier
 
@@ -333,13 +339,6 @@ Every dispatch picks a **tier**, passed as `-Tier` to `spawn-ticket-agent.ps1`. 
 governs **dispatched agents only** — `wayfinder:research` tickets and AFK `wayfinder:task`
 tickets. Grilling and prototype tickets are HITL, worked by you and Raj in session, and
 never reach it.
-
-Why a rubric at all, and why this one: you always run on Opus. You read the map, pick the
-ticket and write the spec — so the *planning* half of the classic Opus-plans /
-Sonnet-executes split is already done, on Opus, before any centurion starts. The centurion
-is the executor. The discriminator is therefore not ticket *type* (which predicts nothing)
-and not a difficulty rating (unfalsifiable), but **whether the thinking has already
-happened**.
 
 Tiers are **named pairs**, not a model dial crossed with an effort dial. Independent dials
 would be twelve combinations and an argument at every dispatch.
@@ -362,6 +361,13 @@ wrong Execute call costs a wasted run plus a re-fire.
 If you cannot write both, it is Heavy. This is deliberately a test you can fail, because
 you both write the spec and pick the tier, and the cheap answer is always the one that
 looks like less work.
+
+Why a rubric at all, and why this one: you always run on Opus. You read the map, pick the
+ticket and write the spec — so the *planning* half of the classic Opus-plans /
+Sonnet-executes split is already done, on Opus, before any centurion starts. The centurion
+is the executor. The discriminator is therefore not ticket *type* (which predicts nothing)
+and not a difficulty rating (unfalsifiable), but **whether the thinking has already
+happened**.
 
 **Effort stays `medium` in two tiers of three.** Effort is the larger cost lever — an ~8x
 output-token span low→max against Opus's 1.67x over Sonnet — and it acts on all response
@@ -400,12 +406,6 @@ Note the pattern: **every Execute ticket sits downstream of a resolved decision.
 
 ### The watcher — how a landing reaches you
 
-`spawn-ticket-agent.ps1` detaches and returns immediately, so a finished centurion reaches
-nothing on its own: no `SubagentStop`, no background-task completion, no entry in `claude
-agents`. Without a watcher your only wake is Raj typing, and nothing obliges you to check
-on that turn — which is how a landed scout sits unreported until he asks. **He should never
-have to ask.**
-
 **Arm it once per session, at your first dispatch**, and leave it up:
 
 ```
@@ -426,6 +426,12 @@ else is wrong.
 One watcher covers every centurion on the machine, however many maps dispatched them — do
 not arm one per ticket. It backfills silently on start, so re-arming after a crash replays
 nothing and cannot double-append a gist to the map.
+
+What the watcher is for: `spawn-ticket-agent.ps1` detaches and returns immediately, so a
+finished centurion reaches nothing on its own: no `SubagentStop`, no background-task
+completion, no entry in `claude agents`. Without a watcher your only wake is Raj typing,
+and nothing obliges you to check on that turn — which is how a landed scout sits unreported
+until he asks. **He should never have to ask.**
 
 Six events, and **it returns no verdict** — same as `inspect-run.ps1`:
 
@@ -779,8 +785,10 @@ report state in chat, and act on his sentence.
 
 General non-Wayfinder work supervision.
 
+**Away-mode** — deciding and acting alone while Raj is gone. You wake, you report, you
+wait.
+
 Landing notifications were listed here — *"assume Raj is at the keyboard"* — until the
 assumption was tested and found wrong twice over: he is often away, and being present
 never woke you either, because nothing reached you on a landing at all. *The watcher*
-above replaces the whole item. What is still genuinely out of scope is **away-mode**:
-deciding and acting alone while he is gone. You wake, you report, you wait.
+above replaces the whole item.
