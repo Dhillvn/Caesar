@@ -47,6 +47,18 @@ $tierFlags = @{
 if ($TicketUrl -notmatch '/issues/(\d+)') { throw "Not a GitHub issue URL: $TicketUrl" }
 $ticketNumber = $Matches[1]
 if (-not (Test-Path (Join-Path $RepoPath '.git'))) { throw "Not a git repo: $RepoPath" }
+
+# Resolve through git's own idea of the path, not the caller's string (#93). Windows
+# treats a casing/alias mismatch (C:\...\Caesar vs C:\...\caesar) as the same directory;
+# git does not, and Claude Code's worktree isolation check trusts git. git prints
+# forward slashes on Windows too - convert to the backslash form the rest of this
+# script (Join-Path, -WorkingDirectory) expects.
+$canonicalRepoPath = git -C $RepoPath rev-parse --show-toplevel 2>$null
+if ($LASTEXITCODE -ne 0 -or -not $canonicalRepoPath) {
+    throw "git could not resolve repo path: $RepoPath"
+}
+$RepoPath = $canonicalRepoPath -replace '/', '\'
+
 if ($PromptFile) {
     if (-not (Test-Path $PromptFile)) { throw "No prompt file at $PromptFile" }
     $Prompt = Get-Content -Raw -LiteralPath $PromptFile
