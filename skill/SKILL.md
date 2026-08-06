@@ -306,9 +306,11 @@ per-ticket judgment and the only part you write by hand — one line, no rationa
 
 | Ticket shape | Name in the prompt |
 |---|---|
-| design or interface work | `impeccable` (2.7 MB on disk, 14 KB to load — #73; directory size is not cost) |
-| review ticket | the code-review skills — `numen-stack-review`, `codex-review` |
-| web retrieval | Firecrawl |
+| design or interface work | `impeccable` |
+| review ticket — written code | `mattpocock-skills:code-review`, with the fixed point in the prompt |
+| review ticket — a plan, not code | `codex-review` (reviews plans, not code, despite the name — [#89](https://github.com/Dhillvn/caesar/issues/89)) |
+| review ticket on the Numen stack (Supabase / Next.js / TS) | also `numen-stack-review` |
+| web retrieval | Firecrawl — `ToolSearch` for its tools first, they arrive deferred |
 | research past ~5 sources | **nothing — read the sources directly** |
 
 **The NotebookLM expectation is retired, not forgotten.**
