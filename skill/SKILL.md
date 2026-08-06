@@ -413,15 +413,21 @@ One watcher covers every centurion on the machine, however many maps dispatched 
 not arm one per ticket. It backfills silently on start, so re-arming after a crash replays
 nothing and cannot double-append a gist to the map.
 
-Five events, and **it returns no verdict** — same as `inspect-run.ps1`:
+Six events, and **it returns no verdict** — same as `inspect-run.ps1`:
 
 | Event | What it means |
 |---|---|
 | `LANDED` | result JSON parsed, `GIST:` line carried on the event — verify, then append |
 | `LANDED-NO-GIST` | exit clean, no `GIST:` printed — verify the ticket before appending anything |
 | `ERRORED` | `is_error: true`, with `terminal_reason` and cost |
+| `DIED-AT-SPAWN` | the dispatched process is **gone**, its result file empty, no turn ever written — it definitely never started, and the stderr tail is on the event. Off the clock: it arrives on the next poll |
 | `QUIET` | transcript has not advanced past the timer — **look, do not kill** |
-| `NO-TRANSCRIPT` | past the timer and the session never wrote a turn — it may never have started |
+| `NO-TRANSCRIPT` | past the timer and the session never wrote a turn — it *may* never have started |
+
+`DIED-AT-SPAWN` and `NO-TRANSCRIPT` differ in certainty, and that is the whole distinction:
+the first read the PID from the dispatch sidecar and found nothing alive, so the run is
+terminal and is reported **once**. The second only knows the clock ran out, so it re-arrives
+every `-RecheckMinutes` — the process may yet be alive.
 
 `LANDED` is not "accept the gist" and `QUIET` is not "kill it". The failure table below
 makes both calls, unchanged.
@@ -458,6 +464,7 @@ call is yours, here:
 | **Budget exhausted** — cost at cap, no artifact | **Flag.** Raising the cap or splitting the ticket is Raj's call |
 | **Silent do-nothing** — exit 0, `is_error: false`, ticket open, no comment. Includes the clean-exit-mid-wait shape: the centurion built its rig, backgrounded the work, and ended its turn saying it is waiting for a completion notification — nothing wakes a headless agent, so the work finishes after it is gone and is thrown away | **Retry**, prompt sharpened to name the missing artifact |
 | **Half-done** — comment but not closed, or closed with no comment | **Neither.** Finish the mechanical remainder yourself, no spawn. Flag only if the *work* is partial rather than the bookkeeping |
+| **Died at spawn** — `DIED-AT-SPAWN`: the process is gone, nothing was ever written, stderr tail on the event | **Read the tail.** It is the whole diagnosis, and it is nearly always the environment refusing — worktree taken, path missing, auth. Fix the environment and **retry**; if nothing on this machine can be fixed, **flag** |
 | **Wedged** — killed after the heartbeat flatlined | **Triage on the tails.** Died mid-API-call → bad roll → retry. Looping the same action → wall → flag. Never really started (auth, bad path) → wall → flag |
 | **Coherently wrong** — artifact complete, answer collides with a prior decision | **Reopen, comment what it collides with, flag. Never retry** — *except* a complete-but-inadequate artifact at **Execute**, which retries **once at Heavy** |
 
@@ -499,6 +506,12 @@ legitimately slow work, and `--max-budget-usd` already bounds a runaway. Both in
 
 A wedge is not automatically a flag — a dropped connection is a bad roll, a loop is a
 wall, and the table above already tells them apart.
+
+**A death is not on the clock at all.** A run whose process is gone before it wrote a turn
+is finished, not slow, so `DIED-AT-SPAWN` arrives on the next poll — seconds, not 30
+minutes — and arrives exactly **once**, because a corpse's state cannot change and a
+repeated alarm on it is how a real landing gets missed. Nothing acknowledges it and nothing
+needs to: re-arming the watcher backfills it silently, the same as a landing.
 
 ### Retry mechanics
 
