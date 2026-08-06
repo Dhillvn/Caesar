@@ -251,6 +251,9 @@ session skips it. An open, unassigned ticket is unclaimed.
 its own git worktree. The script carries the flag set and the deny list; do not compose
 that command by hand.
 
+**Composing a dispatch prompt** — the ordered shape it takes, and what the guardrail frame
+already carries: [`references/prompt-shape.md`](references/prompt-shape.md).
+
 The centurion **posts its own resolution comment and closes its own ticket**, then prints a
 `GIST:` line. You read only the gist and append it to the map. This keeps your context
 cheap and, more importantly, makes verification real.
