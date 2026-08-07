@@ -1,0 +1,37 @@
+{
+  "id": "grill-only",
+  "branch": "Grill-only with nothing takeable",
+  "situation": "The session is invoked grill-only and the frontier holds two unblocked AFK tickets and no HITL ticket at all. Grill-only spawns nothing, so there is nothing it is permitted to do — the stop is forced by the map's contents, not by asking the session whether it would stop.",
+  "map": {
+    "title": "Retire the hand-poll of the run directory",
+    "body": "## Destination\n\nA decision on what replaces hand-polling `.claude/caesar-runs/`, and the change that lands it.\n\n## Decisions so far\n\n_None yet._\n\n## Not yet specified\n\n- Whether the watcher's quiet timer should be per-map.\n\n## Notes\n\nFixture map. Created by scripts/branch-harness.ps1. Safe to close.\n"
+  },
+  "tickets": [
+    {
+      "key": "t1",
+      "title": "Survey how other harnesses detect a detached agent finishing",
+      "labels": ["wayfinder:research"],
+      "body": "Find out what mechanisms comparable harnesses use to learn that a detached process has finished.\n\n## Done when\n\n- A written comparison is on this ticket.\n\nFixture ticket. Created by scripts/branch-harness.ps1. Safe to close.\n",
+      "assign": false,
+      "close": false,
+      "comment": null,
+      "blocked_by": []
+    },
+    {
+      "key": "t2",
+      "title": "Write the watcher smoke test",
+      "labels": ["wayfinder:task"],
+      "body": "Add a one-pass self-test to the watcher so a re-arm can be shown to replay nothing.\n\n## Done when\n\n- The self-test runs from one command and prints pass or fail.\n\nFixture ticket. Created by scripts/branch-harness.ps1. Safe to close.\n",
+      "assign": false,
+      "close": false,
+      "comment": null,
+      "blocked_by": []
+    }
+  ],
+  "invocation": "Run grill-only on this map: {map_url}",
+  "expect_reads": [],
+  "expect_markers": [
+    "nothing here for me|needs a primary|only afk|nothing.{0,40}permitted|no hitl"
+  ],
+  "notes": "Neither ticket carries `caesar:hitl`, so both are Caesar's own work and unreachable from a grill-only session. The stop line the skill dictates is quoted almost verbatim in the marker."
+}

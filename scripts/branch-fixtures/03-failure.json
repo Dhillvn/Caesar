@@ -1,0 +1,37 @@
+{
+  "id": "failure",
+  "branch": "A centurion that failed",
+  "situation": "The map's only AFK ticket is claimed and still open, and it already carries a resolution comment. That is the 'claimed AFK with nothing on disk' shape: the GitHub artifact says the work is done and the bookkeeping is not, so the session lands in the failure rules whether or not it wants to. Nothing on disk is fabricated — the absence of a worktree is what makes it a failure rather than a live run.",
+  "map": {
+    "title": "Trim the startup read set",
+    "body": "## Destination\n\nA decision on which of Caesar's four startup reads can be dropped without losing a failure mode.\n\n## Decisions so far\n\n_None yet._\n\n## Not yet specified\n\n- Whether `gh pr list` can be folded into the frontier sweep.\n\n## Notes\n\nFixture map. Created by scripts/branch-harness.ps1. Safe to close.\n"
+  },
+  "tickets": [
+    {
+      "key": "t1",
+      "title": "Measure what each startup read costs in context",
+      "labels": ["wayfinder:research"],
+      "body": "Measure the context cost of each of the four startup reads on a real map.\n\n## Done when\n\n- A per-read token count is on this ticket.\n\nFixture ticket. Created by scripts/branch-harness.ps1. Safe to close.\n",
+      "assign": true,
+      "close": false,
+      "comment": "## Resolution\n\nMeasured on a 19-child map. The map body read is 6.1K tokens, `frontier.ps1` is 900, `git worktree list` is under 100, and `gh pr list` is under 100. The map body dominates and is the one that is unconditionally required, so none of the four is worth dropping on cost.\n\nGIST: On a 19-child map the map-body read costs 6.1K tokens and the other three startup reads cost under 1.1K combined, so no startup read is worth dropping on context cost.\n",
+      "blocked_by": []
+    },
+    {
+      "key": "t2",
+      "title": "Write the trimmed startup sequence into SKILL.md",
+      "labels": ["wayfinder:task"],
+      "body": "Blocked until the measurement lands.\n\nFixture ticket. Created by scripts/branch-harness.ps1. Safe to close.\n",
+      "assign": false,
+      "close": false,
+      "comment": null,
+      "blocked_by": ["t1"]
+    }
+  ],
+  "invocation": "Drive this Wayfinder map: {map_url}",
+  "expect_reads": [],
+  "expect_markers": [
+    "half.?done|bookkeeping|close (it|the ticket)|finish the mechanical|resolution comment"
+  ],
+  "notes": "The expected call is the 'comment but still open' row: finish the mechanical remainder, no spawn, no flag. The marker deliberately does not demand the word 'failure' — the skill's own wording for this row is about bookkeeping."
+}

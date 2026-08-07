@@ -1,0 +1,13 @@
+{
+  "id": "chart",
+  "branch": "Chart a new map",
+  "situation": "Caesar is handed a loose idea and no map URL. The branch is forced by the absence of a map, not by asking the session to chart one: there is nothing to sweep, so 'Charting a new map' is the only section that applies.",
+  "map": null,
+  "tickets": [],
+  "invocation": "I want to get the Caesar run logs off this machine and somewhere I can read them from my phone. No idea what that looks like yet. Take it.",
+  "expect_reads": [],
+  "expect_markers": [
+    "chart|destination|not yet specified|fog"
+  ],
+  "notes": "expect_reads is empty on purpose. Today's SKILL.md carries no reference pointer in its charting section, so a read here would be the session improvising, not a pointer firing. KNOWN NOT TO FIRE on the 2026-08-06 baseline: an invocation with no map URL and no mention of Caesar does not match the skill's description, so the session never loaded the skill and simply built the thing itself. That is a harness limitation, not a Caesar defect - the real invocation is the `/caesar` slash command, and this runner deliberately does not use slash commands because a slash command in `-p` swallows the rest of the message. Fixing it means either naming Caesar in the invocation (which weakens 'the branch is the situation, not a question') or teaching the runner to send a slash command safely. Left as-is and reported."
+}

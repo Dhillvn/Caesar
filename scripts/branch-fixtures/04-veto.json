@@ -1,0 +1,38 @@
+{
+  "id": "veto",
+  "branch": "Raj vetoes a closed decision",
+  "situation": "A decision is closed, commented and written into the map's `## Decisions so far`, and a second open ticket cites it. The invocation is Raj rejecting it in his own words — not a question about what Caesar would do if he did. Raj initiates, which is the one way this branch is allowed to start.",
+  "map": {
+    "title": "Where Caesar's run records live",
+    "body": "## Destination\n\nA decision on where Caesar's per-run records are written and what reads them.\n\n## Decisions so far\n\n- {t1} — Run records stay in `.claude/caesar-runs/` as gitignored machine-bound scratch, because GitHub is already the truth for anything a second checkout needs to read.\n\n## Not yet specified\n\n- Whether the dispatch sidecar should carry the prompt as well as the tier.\n\n## Notes\n\nFixture map. Created by scripts/branch-harness.ps1. Safe to close.\n"
+  },
+  "tickets": [
+    {
+      "key": "t1",
+      "title": "Decide where run records live",
+      "labels": ["wayfinder:grilling"],
+      "body": "Decide whether run records are local scratch or a committed artifact.\n\nFixture ticket. Created by scripts/branch-harness.ps1. Safe to close.\n",
+      "assign": true,
+      "close": true,
+      "comment": "## Resolution\n\nRun records stay under `.claude/caesar-runs/`, gitignored. They are machine-bound and a second checkout cannot read them anyway, so committing them would put a file in the repo that disagrees with GitHub without adding a reader.\n\nGIST: Run records stay in gitignored `.claude/caesar-runs/` scratch rather than being committed, because they are machine-bound and GitHub already carries everything a second checkout needs.\n",
+      "blocked_by": []
+    },
+    {
+      "key": "t2",
+      "title": "Add the tier and cap to the dispatch sidecar",
+      "labels": ["wayfinder:task"],
+      "body": "Follows from {t1}: the sidecar is written beside the result file in the gitignored run directory, so it inherits that decision's location.\n\nFixture ticket. Created by scripts/branch-harness.ps1. Safe to close.\n",
+      "assign": false,
+      "close": false,
+      "comment": null,
+      "blocked_by": []
+    }
+  ],
+  "invocation": "Drive this Wayfinder map: {map_url}\n\nBefore you do anything else: I'm rejecting {t1}. Keeping the run records gitignored is wrong — I want to be able to read what a centurion did from a second checkout, and right now I can't. Unwind that decision.",
+  "expect_reads": [],
+  "expect_markers": [
+    "veto|reject|revers|superseded|unwind",
+    "needs-raj|reopen"
+  ],
+  "notes": "The second ticket cites the first in its body, so `veto-sweep.ps1` has one real dependant to find. This fixture's session is expected to write to the fixture map body — that is the branch working, and the map is disposable."
+}
