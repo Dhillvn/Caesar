@@ -24,7 +24,8 @@ claude plugin list --json | ConvertFrom-Json |
   Where-Object { Test-Path $_ }
 ```
 
-`installPath` is the version the harness is actually using. Never write a literal path to
+`installPath` is the version the harness is actually using — **run that query each session and
+read Wayfinder from the path it returns.** Never write a literal path to
 Wayfinder and never glob the plugin cache: cache paths carry a version segment and old
 version directories are never removed, so a literal either breaks on the next upstream
 release or — worse, and silently — keeps resolving to a frozen copy while you believe you
@@ -48,9 +49,9 @@ the URL. Two roles:
 
 Only one primary at a time.
 
-**Grill-only starts differently** — the two reads it makes, the PR surfacing it must not do,
-and what it says on an AFK-only frontier. Read it when `grill-only` is in the command, before
-your first read: [`references/grill-only.md`](references/grill-only.md).
+**Grill-only starts differently** — the two reads it makes, the PR surfacing it must not do
+and the primary owns, and what it says on an AFK-only frontier. Read it when `grill-only` is
+in the command, before your first read: [`references/grill-only.md`](references/grill-only.md).
 
 `/caesar` with a **loose idea and no URL** charts a new map first, then drives it.
 
@@ -86,7 +87,8 @@ watches a directory that does not exist**: [`references/watcher.md`](references/
 
 **Any worktree read 3 shows** — who owns one, how teardown works, and which ones you may
 delete. Read it before you delete anything: **never delete a worktree that is not named
-`ticket-N-*`**, it could be Raj's own: [`references/worktrees.md`](references/worktrees.md).
+`ticket-N-*`** — report it once and ask, it could be Raj's own:
+[`references/worktrees.md`](references/worktrees.md).
 
 **No ticket bodies.** Not one, until you have picked a ticket. That is the context killer
 at 19+ children.
@@ -142,7 +144,8 @@ On a clean session that is about four lines.
    append the gist to the map, tear down the worktree.
 5. **Repeat** until the frontier is empty.
 
-Never resolve more than one HITL ticket per session. Research tickets are exempt.
+One HITL ticket per session, worked through to a resolution — never resolve more than one
+HITL ticket per session. Research tickets are exempt.
 
 ## Choosing what to work
 
@@ -161,7 +164,7 @@ before you search for maps or withdraw from one:
 **Firing a centurion** — how one goes out: `scripts/spawn-ticket-agent.ps1`, the prompt
 shape, the tier rubric, and how a landing is reported mid-grill. Read it before you fire.
 Never compose the `claude -p` command by hand — the script carries the flag set and the deny
-list — and never treat an exit code as evidence of work done:
+list — and never treat an exit code as evidence of work done; verify against the artifact:
 [`references/dispatch.md`](references/dispatch.md).
 
 **The watcher** — how a landing reaches you, and the six events it reports. Arm it once per
@@ -178,8 +181,9 @@ overridable per-map in the map's own **Notes** section.
 
 **A centurion that fails** — the failure table: which failures retry, which stamp
 `caesar:needs-raj`, which are Raj's call and not yours, plus the timer, retry mechanics, and
-the claimed-AFK-with-nothing-on-disk case. Read it before you retry, flag or kill; **one
-retry maximum, ever**, and a failure classed from memory is the one that reads as progress:
+the claimed-AFK-with-nothing-on-disk case. Read it before you retry, flag or kill, and class
+the failure from the evidence in front of you; **one retry maximum, ever**, and a failure
+classed from memory is the one that reads as progress:
 [`references/failure.md`](references/failure.md).
 
 ## Showing Raj where things stand

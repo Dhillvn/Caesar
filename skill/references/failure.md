@@ -41,7 +41,8 @@ licenses this and nothing else. It applies at Execute only, and it does not rais
 retry maximum.
 
 **Every other failure class retries at the same tier, or does not retry.** In particular,
-**budget death never escalates**: Tail burns the cap faster, so escalating there is
+**budget death never escalates**: it flags, and raising the cap or splitting the ticket is
+Raj's call. Tail burns the cap faster, so escalating there is
 counting to a tip. **Heavy → Tail never fires automatically** either — Opus medium failing
 does not imply Opus high succeeding, and it costs more. Tail is reached only by an explicit
 per-map override.
@@ -88,7 +89,8 @@ saying why you stopped. Label so the sweep sees it, comment so Raj can read it,
 assignment so it is off the frontier. `frontier.ps1` reports it as `flagged` and
 `status.ps1` renders it **Needs you**, above everything else.
 
-Never leave a failed ticket open and unassigned — that hands it back to the next
+Leave it labelled, assigned and commented, so the sweep passes over it; never leave a
+failed ticket open and unassigned — that hands it back to the next
 session, which re-fires it, defeating the retry ceiling silently.
 
 The label is per ticket and is not only for failures: it marks **any AFK ticket you have

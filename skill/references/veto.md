@@ -28,7 +28,8 @@ every issue that cross-references the vetoed one. It returns no verdict: separat
 load-bearing dependants from passing citation yourself, propose an action per dependant,
 and wait for his word. A second hop only where hop one came back contaminated.
 
-Do not reach for `gh search issues` — #30 measured it at 12 hits of ~20 against the
+The sweep's hop-one list is the report you work from. Do not reach for `gh search issues` —
+#30 measured it at 12 hits of ~20 against the
 timeline's 5, and the noise reads exactly like a real report. Known gap, accepted: the
 sweep sees only tickets that wrote the link.
 
