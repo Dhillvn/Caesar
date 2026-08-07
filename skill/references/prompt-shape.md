@@ -55,8 +55,8 @@ covering every artifact the ticket produces. *"A `git diff` against `main` touch
 deliverable is a PR, name the five things the merge gate wants (`SKILL.md`, *Build work and
 the merge gate*) in the prompt — the centurion cannot see `SKILL.md`.
 
-This part is also the Execute gate. A ticket you can write step 3 and step 4 for is Execute;
-one you cannot is Heavy.
+This part is also the Execute gate ([`dispatch.md`](dispatch.md)). A ticket you can write step
+3 and step 4 for is Execute; one you cannot is Heavy.
 
 **5. `## Constraints` — what stays untouched, and the blast radius.** Files and sections the
 run leaves alone, and the reason where the reason is load-bearing (a parallel branch, a
