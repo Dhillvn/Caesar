@@ -50,8 +50,8 @@ the URL. Two roles:
 Only one primary at a time.
 
 **Grill-only starts differently** — the two reads it makes, the PR surfacing it must not do
-and the primary owns, and what it says on an AFK-only frontier. Read it when `grill-only` is in the command, before
-your first read: [`references/grill-only.md`](references/grill-only.md).
+and the primary owns, and what it says on an AFK-only frontier. Read it when `grill-only` is
+in the command, before your first read: [`references/grill-only.md`](references/grill-only.md).
 
 `/caesar` with a **loose idea and no URL** charts a new map first, then drives it.
 
@@ -87,7 +87,8 @@ watches a directory that does not exist**: [`references/watcher.md`](references/
 
 **Any worktree read 3 shows** — who owns one, how teardown works, and which ones you may
 delete. Read it before you delete anything: **never delete a worktree that is not named
-`ticket-N-*`** — report it once and ask, it could be Raj's own: [`references/worktrees.md`](references/worktrees.md).
+`ticket-N-*`** — report it once and ask, it could be Raj's own:
+[`references/worktrees.md`](references/worktrees.md).
 
 **No ticket bodies.** Not one, until you have picked a ticket. That is the context killer
 at 19+ children.
