@@ -30,7 +30,8 @@ What the watcher is for: `spawn-ticket-agent.ps1` detaches and returns immediate
 finished centurion reaches nothing on its own: no `SubagentStop`, no background-task
 completion, no entry in `claude agents`. Without a watcher your only wake is Raj typing,
 and nothing obliges you to check on that turn — which is how a landed scout sits unreported
-until he asks. **He should never have to ask.**
+until he asks. The armed watcher is what carries the landing to him first: **he should never
+have to ask.**
 
 Six events, and **it returns no verdict** — same as `inspect-run.ps1`:
 
@@ -51,5 +52,6 @@ every `-RecheckMinutes` — the process may yet be alive.
 `LANDED` is not "accept the gist" and `QUIET` is not "kill it". The failure table in
 [`failure.md`](failure.md) makes both calls, unchanged.
 
-**Never hand-poll the run directory.** The watcher is the only mechanism; a hand-poll only
+**Never hand-poll the run directory** — leave the armed watcher to wake you. The watcher is
+the only mechanism; a hand-poll only
 fires on a turn you already have, which is the failure this replaces.

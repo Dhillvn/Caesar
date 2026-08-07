@@ -7,8 +7,8 @@ Heavy, Execute, Tail — is defined here and used by [`failure.md`](failure.md).
 ## Dispatching a centurion
 
 `scripts/spawn-ticket-agent.ps1` — one headless `claude -p` process per ticket, each in
-its own git worktree. The script carries the flag set and the deny list; do not compose
-that command by hand.
+its own git worktree. The script carries the flag set and the deny list; fire every dispatch
+through it, and do not compose that command by hand.
 
 **Composing a dispatch prompt** — the ordered shape it takes, and what the guardrail frame
 already carries. Read it before you write one; a prompt shaped from memory restates the frame
@@ -35,7 +35,8 @@ directory ([#72](https://github.com/Dhillvn/caesar/blob/main/docs/research/headl
 spawn path). So the skill block is an **override layer, not a re-listing** — naming a
 skill the agent already holds is dead weight in every dispatch. Three rules, in order:
 
-**1. Never re-list what is inherited.** Everything in the global `CLAUDE.md` reaches the
+**1. Write the block as an override of what the centurion already holds; never re-list what
+is inherited.** Everything in the global `CLAUDE.md` reaches the
 centurion already, including "run `ponytail` before writing code" and caveman mode — #72
 caught a probe writing its own refusal in caveman style, which is that hook acting on a
 headless agent. Retyping those buys nothing, and repetition is not a strengthener:
@@ -44,7 +45,8 @@ whether `ponytail` changes a headless agent's output at all has never been measu
 **2. Never retype an exclusion — the spawn script carries them.** The one banned skill is
 `claude-api`, and the ban lives in the guardrail heredoc in
 `scripts/spawn-ticket-agent.ps1`, where it reaches every centurion and cannot be
-forgotten. **Ban nothing else.** [#73](https://github.com/Dhillvn/caesar/blob/main/docs/research/skill-cost-inventory.md) measured
+forgotten. **Ban nothing else — every other skill on the machine stays available to the
+centurion.** [#73](https://github.com/Dhillvn/caesar/blob/main/docs/research/skill-cost-inventory.md) measured
 all 119 `SKILL.md` files on the machine against several hundred real loads: `SKILL.md`
 size predicts injection at 0.94×, directory size does not predict it at all, and the
 largest ordinary skill is 45 KB — about 6% of the $5.00 cap. `claude-api` injects 898 KB
