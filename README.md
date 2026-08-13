@@ -27,6 +27,7 @@ Then, from inside whichever repo owns the map:
 | `skill/scripts/spawn-ticket-agent.ps1` | Frozen: fire one headless ticket agent, worktree + deny list |
 | `skill/scripts/remove-worktree.ps1` | Frozen: fail-closed worktree teardown |
 | `skill/scripts/status.ps1` | The status view — renders over the sweep, no query of its own |
+| `skill/scripts/publish-runs.ps1` | Renders every discovered `.claude\caesar-runs\` directory into the private run-log gist, one file per repo |
 | `install.ps1` | The junction install |
 | `docs/research/` | Prior-art and measurement write-ups |
 
