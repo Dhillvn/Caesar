@@ -141,7 +141,9 @@ On a clean session that is about four lines.
    with a human, so you *are* the channel.
 4. **Harvest.** A landing **wakes you** — the watcher emits one line per event, and
    that line arrives even while you sit idle mid-grill. On each: verify against GitHub,
-   append the gist to the map, tear down the worktree.
+   append the gist to the map, tear down the worktree, then run
+   `scripts/publish-runs.ps1` so the run's final cost, turns and `GIST:` line reach
+   the phone-readable gist the same pass they reach the map.
 5. **Repeat** until the frontier is empty.
 
 One HITL ticket per session, worked through to a resolution — never resolve more than one

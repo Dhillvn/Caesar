@@ -10,6 +10,10 @@ Heavy, Execute, Tail — is defined here and used by [`failure.md`](failure.md).
 its own git worktree. The script carries the flag set and the deny list; fire every dispatch
 through it, and do not compose that command by hand.
 
+Right after the dispatch returns, run `scripts/publish-runs.ps1` — the new run's `RUNNING`
+row is what makes the gist worth reading from a phone mid-run, and the render is a pull
+over the run directories, not a push the spawn needed to make.
+
 **Composing a dispatch prompt** — the ordered shape it takes, and what the guardrail frame
 already carries. Read it before you write one; a prompt shaped from memory restates the frame
 and leaves the centurion with no bound of its own:
