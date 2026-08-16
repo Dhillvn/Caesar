@@ -31,6 +31,13 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# ponytail: this process's console codepage can default to ASCII (OEM 437), which
+# silently drops every non-ASCII byte gh.exe writes - em dashes and curly quotes in
+# ticket titles come back as garbage. frontier.ps1 is frozen, but it runs `& `-called
+# in this same process, so fixing the encoding here fixes it there too.
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+
 . (Join-Path $PSScriptRoot 'ticket-state.ps1')
 $sweepScript = Join-Path $PSScriptRoot 'frontier.ps1'
 
@@ -80,12 +87,26 @@ $maps = @($maps)
 
 $slots = @($maps | ForEach-Object { $_.OpenTickets } | Where-Object { $_.Who -eq 'Caesar' -and $_.State -eq 'Ongoing' }).Count
 
+# ticket -> owning map number, so a PR's closing issue can be traced back to its
+# Dashboard Frame (#183: the gate groups PRs under the map they belong to).
+$ticketMap = @{}
+foreach ($m in $maps) {
+    foreach ($t in $m.OpenTickets) { $ticketMap[$t.Number] = $m.Number }
+}
+
 $repos = @($maps | Where-Object { $_.Repo } | ForEach-Object { $_.Repo } | Select-Object -Unique)
 $prs = foreach ($r in $repos) {
-    $json = gh pr list --repo $r --state open --json number,title,url,isDraft
+    $json = gh pr list --repo $r --state open --json number,title,url,isDraft,createdAt,closingIssuesReferences
     if ($LASTEXITCODE -ne 0) { throw "gh pr list failed for $r" }
     foreach ($pr in ($json | ConvertFrom-Json)) {
-        [pscustomobject]@{ Number = $pr.number; Title = $pr.title; Url = $pr.url; Repo = $r; Draft = $pr.isDraft }
+        $closes = @($pr.closingIssuesReferences) | Select-Object -First 1
+        $ticket = if ($closes) { $closes.number } else { $null }
+        $mapNum = if ($ticket -and $ticketMap.ContainsKey($ticket)) { $ticketMap[$ticket] } else { $null }
+        [pscustomobject]@{
+            Number = $pr.number; Title = $pr.title; Url = $pr.url; Repo = $r; Draft = $pr.isDraft
+            ClosesTicket = $ticket; Map = $mapNum
+            AgeSeconds = [int](New-TimeSpan -Start ([datetime]$pr.createdAt) -End (Get-Date).ToUniversalTime()).TotalSeconds
+        }
     }
 }
 $prs = @($prs)
