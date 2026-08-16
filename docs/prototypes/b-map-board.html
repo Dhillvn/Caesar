@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Caesar — Command Centre (B: Map Board)</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --head:#1c2128; --line:#30363d;
+    --fg:#e6edf3; --mut:#8b949e; --dim:#6e7681;
+    --you:#d29922; --blocked:#f85149; --run:#58a6ff; --ok:#3fb950;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font:14px/1.45 ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif}
+  a{color:inherit;text-decoration:none}
+  a:hover{text-decoration:underline;text-decoration-color:var(--run)}
+
+  header{background:var(--panel);border-bottom:1px solid var(--line);
+    padding:11px 20px;display:flex;gap:20px;align-items:baseline;flex-wrap:wrap}
+  h1{font-size:15px;margin:0;letter-spacing:.02em}
+  .kpi{display:flex;gap:20px;flex-wrap:wrap}
+  .kpi div{font-size:12px;color:var(--dim)}
+  .kpi b{font-size:17px;color:var(--fg);font-weight:600;margin-right:5px;
+    font-variant-numeric:tabular-nums}
+  .kpi .you b{color:var(--you)} .kpi .bad b{color:var(--blocked)}
+  .stamp{margin-left:auto;color:var(--dim);font-size:12px}
+
+  .wrap{display:grid;grid-template-columns:1fr 320px;gap:16px;padding:16px;align-items:start}
+  .board{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+
+  .map{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .map.hot{border-color:#5c4813}
+  .map>header{display:block;background:var(--head);padding:11px 14px;
+    border-bottom:1px solid var(--line)}
+  .map .name{font-size:14px;font-weight:600;line-height:1.3;display:block;margin-bottom:8px}
+  .prog{height:5px;background:#21262d;border-radius:3px;overflow:hidden;margin-bottom:6px}
+  .prog i{display:block;height:100%;background:var(--ok)}
+  .meta{font-size:11.5px;color:var(--dim);display:flex;gap:8px;flex-wrap:wrap;
+    font-variant-numeric:tabular-nums}
+  .meta .repo{color:var(--mut)}
+
+  ul{list-style:none;margin:0;padding:0}
+  li{display:flex;gap:9px;align-items:baseline;padding:7px 14px;border-bottom:1px solid #21262d}
+  li:last-child{border-bottom:0}
+  li:hover{background:#1b2129}
+  li.need{background:#1d1806} li.need:hover{background:#241d08}
+  .n{color:var(--dim);font-size:12px;font-variant-numeric:tabular-nums;min-width:34px}
+  .t{flex:1;line-height:1.35;font-size:13.5px}
+  .dot{width:7px;height:7px;border-radius:50%;flex:none;margin-top:6px}
+  .d-need{background:var(--you)} .d-block{background:var(--blocked)}
+  .d-run{background:var(--run);box-shadow:0 0 0 3px #58a6ff22}
+  .d-queue{background:#4b535c}
+  .on{font-size:11.5px;color:var(--dim);white-space:nowrap}
+  .on a{color:var(--blocked)}
+  .ty{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+
+  aside{display:grid;gap:16px;position:sticky;top:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .card>h3{margin:0;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--dim);padding:9px 14px;background:var(--head);border-bottom:1px solid var(--line)}
+  .card.alert>h3{color:var(--you);background:#241d08;border-bottom-color:#5c4813}
+  .item{padding:9px 14px;border-bottom:1px solid #21262d}
+  .item:last-child{border-bottom:0}
+  .item .l1{font-size:13px;line-height:1.35}
+  .item .l2{font-size:11.5px;color:var(--dim);margin-top:3px;
+    display:flex;gap:8px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+  .tag{font-size:10.5px;padding:1px 6px;border-radius:3px;letter-spacing:.04em}
+  .tag-draft{border:1px solid var(--line);color:var(--dim)}
+  .tag-landed{color:var(--ok);background:#0d2417}
+  .tag-err{color:var(--blocked);background:#2b0f0e}
+  .tag-nog{color:var(--you);background:#2a1f06}
+  .slots{display:flex;gap:5px;padding:11px 14px}
+  .slot{flex:1;height:24px;border:1px dashed #343b43;border-radius:4px}
+  .slot.on{border:1px solid #1f4b74;background:#0d2237}
+  .legend{padding:9px 14px;font-size:11.5px;color:var(--dim);display:flex;gap:12px;flex-wrap:wrap}
+  .legend span{display:flex;gap:5px;align-items:center}
+  .legend i{width:7px;height:7px;border-radius:50%;display:block}
+</style></head><body>
+
+<header>
+  <h1>CAESAR — COMMAND CENTRE</h1>
+  <div class="kpi">
+    <div><b>4</b>maps</div>
+    <div><b>21</b>open</div>
+    <div class="you"><b>10</b>need you</div>
+    <div><b>11</b>Caesar</div>
+    <div><b>1</b>PR waiting</div>
+    <div><b>0/4</b>slots</div>
+    <div class="bad"><b>1</b>errored</div>
+  </div>
+  <div class="stamp">2026-08-16 10:18 · refreshed 12s ago</div>
+</header>
+
+<div class="wrap">
+<div class="board">
+
+  <section class="map">
+    <header>
+      <a class="name" href="https://github.com/Dhillvn/Caesar/issues/178">One self-refreshing command centre for every Caesar map</a>
+      <div class="prog"><i style="width:0%"></i></div>
+      <div class="meta"><span class="repo">Dhillvn/Caesar #178</span><span>0 decided</span><span>9 open</span><span>nothing decided yet</span></div>
+    </header>
+    <ul>
+      <li><i class="dot d-run"></i><span class="n"><a href="https://github.com/Dhillvn/Caesar/issues/179">179</a></span><span class="t"><a href="https://github.com/Dhillvn/Caesar/issues/179">Measure the sweep, and choose how the page stays fresh</a></span><span class="ty">research</span></li>
+      <li><i class="dot d-run"></i><span class="n"><a href="https://github.com/Dhillvn/Caesar/issues/180">180</a></span><span class="t"><a href="https://github.com/Dhillvn/Caesar/issues/180">Retire caesar:driving from the maps that are finished</a></span><span class="ty">task</span></li>
+      <li><i class="dot d-run"></i><span class="n"><a href="https://github.com/Dhillvn/Caesar/issues/181">181</a></span><span class="t"><a href="https://github.com/Dhillvn/Caesar/issues/181">Emit the whole picture as one JSON document</a></span><span class="ty">task</span></li>
+      <li class="need"><i class="dot d-need"></i><span class="n"><a href="https://github.com/Dhillvn/Caesar/issues/182">182</a></span><span class="t"><a href="https://github.com/Dhillvn/Caesar/issues/182">Prototype how the command centre looks</a></span><span class="ty">prototype</span></li>
+      <li class="need"><i class="dot d-need"></i><span class="n"><a href="https://github.com/Dhillvn/Caesar/issues/186">186</a></span><span class="t"><a href="https://github.com/Dhillvn/Caesar/issues/186">Decide what the page shows when a sweep fails</a></span><span class="ty">grilling</span></li>
+      <li class="need"><i class="dot d-need"></i><span class="n"><a href="https://github.com/Dhillvn/Caesar/issues/187">187</a></span><span class="t"><a href="https://github.com/Dhillvn/Caesar/issues/187">Rule whether the history view belongs on the page</a></span><span class="ty">grilling</span></li>
+      <li><i class="dot d-block"></i><span class="n"><a href="https://github.com/Dhillvn/Caesar/issues/183">183</a></span><span class="t"><a href="https://github.com/Dhillvn/Caesar/issues/183">Build the renderer and the refresh loop, and make every row on the page click through to GitHub</a></span><span class="on">on <a href="https://github.com/Dhillvn/Caesar/issues/179">179</a> <a href="https://github.com/Dhillvn/Caesar/issues/181">181</a> <a href="https://github.com/Dhillvn/Caesar/issues/182">182</a></span></li>
+      <li><i class="dot d-block"></i><span class="n"><a href="https://github.com/Dhillvn/Caesar/issues/184">184</a></span><span class="t"><a href="https://github.com/Dhillvn/Caesar/issues/184">Make it one command that stays running</a></span><span class="on">on <a href="https://github.com/Dhillvn/Caesar/issues/183">183</a></span></li>
+      <li><i class="dot d-block"></i><span class="n"><a href="https://github.com/Dhillvn/Caesar/issues/188">188</a></span><span class="t"><a href="https://github.com/Dhillvn/Caesar/issues/188">Package the command centre so a cold machine can run it</a></span><span class="on">on <a href="https://github.com/Dhillvn/Caesar/issues/184">184</a></span></li>
+    </ul>
+  </section>
+
+  <section class="map hot">
+    <header>
+      <a class="name" href="https://github.com/Dhillvn/numen-ops/issues/61">Give every scheduled job a health signal Raj can read</a>
+      <div class="prog"><i style="width:71%"></i></div>
+      <div class="meta"><span class="repo">Dhillvn/numen-ops #61</span><span>12 decided</span><span>5 open</span><span>last <a href="https://github.com/Dhillvn/numen-ops/issues/78">#78 Ship the heartbeat file format</a></span></div>
+    </header>
+    <ul>
+      <li class="need"><i class="dot d-need"></i><span class="n"><a href="https://github.com/Dhillvn/numen-ops/issues/79">79</a></span><span class="t"><a href="https://github.com/Dhillvn/numen-ops/issues/79">Alert when a job misses two consecutive runs</a></span><span class="ty">flagged</span></li>
+      <li class="need"><i class="dot d-need"></i><span class="n"><a href="https://github.com/Dhillvn/numen-ops/issues/81">81</a></span><span class="t"><a href="https://github.com/Dhillvn/numen-ops/issues/81">Rule where the health signal is surfaced</a></span><span class="ty">grilling</span></li>
+      <li class="need"><i class="dot d-need"></i><span class="n"><a href="https://github.com/Dhillvn/numen-ops/issues/84">84</a></span><span class="t"><a href="https://github.com/Dhillvn/numen-ops/issues/84">Decide the retention window for heartbeat history</a></span><span class="ty">grilling</span></li>
+      <li><i class="dot d-queue"></i><span class="n"><a href="https://github.com/Dhillvn/numen-ops/issues/80">80</a></span><span class="t"><a href="https://github.com/Dhillvn/numen-ops/issues/80">Survey what the nine jobs already write on failure</a></span><span class="ty">research</span></li>
+      <li><i class="dot d-block"></i><span class="n"><a href="https://github.com/Dhillvn/numen-ops/issues/83">83</a></span><span class="t"><a href="https://github.com/Dhillvn/numen-ops/issues/83">Wire the heartbeat into the remaining six jobs</a></span><span class="on">on <a href="https://github.com/Dhillvn/numen-ops/issues/80">80</a></span></li>
+    </ul>
+  </section>
+
+  <section class="map">
+    <header>
+      <a class="name" href="https://github.com/Dhillvn/Caesar/issues/140">Caesar drives several maps in one session without losing the thread</a>
+      <div class="prog"><i style="width:64%"></i></div>
+      <div class="meta"><span class="repo">Dhillvn/Caesar #140</span><span>7 decided</span><span>4 open</span><span>last <a href="https://github.com/Dhillvn/Caesar/issues/158">#158 Withdraw from a map as a drain</a></span></div>
+    </header>
+    <ul>
+      <li class="need"><i class="dot d-need"></i><span class="n"><a href="https://github.com/Dhillvn/Caesar/issues/159">159</a></span><span class="t"><a href="https://github.com/Dhillvn/Caesar/issues/159">Rule how a session picks between two live frontiers</a></span><span class="ty">grilling</span></li>
+      <li class="need"><i class="dot d-need"></i><span class="n"><a href="https://github.com/Dhillvn/Caesar/issues/163">163</a></span><span class="t"><a href="https://github.com/Dhillvn/Caesar/issues/163">Decide whether a withdrawn map keeps its claim</a></span><span class="ty">grilling</span></li>
+      <li><i class="dot d-queue"></i><span class="n"><a href="https://github.com/Dhillvn/Caesar/issues/160">160</a></span><span class="t"><a href="https://github.com/Dhillvn/Caesar/issues/160">Measure the context cost of a two-map startup</a></span><span class="ty">research</span></li>
+      <li><i class="dot d-block"></i><span class="n"><a href="https://github.com/Dhillvn/Caesar/issues/162">162</a></span><span class="t"><a href="https://github.com/Dhillvn/Caesar/issues/162">Teach status.ps1 to group by map rather than by repo</a></span><span class="on">on <a href="https://github.com/Dhillvn/Caesar/issues/159">159</a></span></li>
+    </ul>
+  </section>
+
+  <section class="map hot">
+    <header>
+      <a class="name" href="https://github.com/Dhillvn/numen-ops/issues/44">Every credential on the machine has a known owner and an expiry</a>
+      <div class="prog"><i style="width:75%"></i></div>
+      <div class="meta"><span class="repo">Dhillvn/numen-ops #44</span><span>9 decided</span><span>3 open</span><span>last <a href="https://github.com/Dhillvn/numen-ops/issues/71">#71 Inventory every token</a></span></div>
+    </header>
+    <ul>
+      <li class="need"><i class="dot d-need"></i><span class="n"><a href="https://github.com/Dhillvn/numen-ops/issues/72">72</a></span><span class="t"><a href="https://github.com/Dhillvn/numen-ops/issues/72">Rotate the gws refresh token to a minimum-scope client</a></span><span class="ty">flagged</span></li>
+      <li class="need"><i class="dot d-need"></i><span class="n"><a href="https://github.com/Dhillvn/numen-ops/issues/73">73</a></span><span class="t"><a href="https://github.com/Dhillvn/numen-ops/issues/73">Decide which credentials may live in a cloud runner</a></span><span class="ty">grilling</span></li>
+      <li><i class="dot d-block"></i><span class="n"><a href="https://github.com/Dhillvn/numen-ops/issues/75">75</a></span><span class="t"><a href="https://github.com/Dhillvn/numen-ops/issues/75">Record an expiry date against every token</a></span><span class="on">on <a href="https://github.com/Dhillvn/numen-ops/issues/72">72</a></span></li>
+    </ul>
+  </section>
+
+</div>
+
+<aside>
+  <div class="card alert">
+    <h3>Waiting on your word — 1</h3>
+    <div class="item">
+      <div class="l1"><a href="https://github.com/Dhillvn/Caesar/pull/174">Report a centurion's own failure modes back into the session</a></div>
+      <div class="l2"><span class="tag tag-draft">draft</span><span>Dhillvn/Caesar</span><a href="https://github.com/Dhillvn/Caesar/pull/174">#174</a></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Agent slots — 0 of 4</h3>
+    <div class="slots"><i class="slot"></i><i class="slot"></i><i class="slot"></i><i class="slot"></i></div>
+  </div>
+
+  <div class="card">
+    <h3>Runs in the field</h3>
+    <div class="item"><div class="l1"><a href="https://github.com/Dhillvn/Caesar/issues/168">Caesar #168</a></div>
+      <div class="l2"><span class="tag tag-landed">LANDED</span><span>$2.41</span><span>38 turns</span><span>15 Aug 16:02</span></div></div>
+    <div class="item"><div class="l1"><a href="https://github.com/Dhillvn/Caesar/issues/167">Caesar #167</a> — budget cap reached</div>
+      <div class="l2"><span class="tag tag-err">ERRORED</span><span>$5.00</span><span>61 turns</span><span>15 Aug 14:47</span></div></div>
+    <div class="item"><div class="l1"><a href="https://github.com/Dhillvn/numen-ops/issues/166">numen-ops #166</a></div>
+      <div class="l2"><span class="tag tag-nog">NO GIST</span><span>$1.12</span><span>19 turns</span><span>15 Aug 11:20</span></div></div>
+    <div class="item"><div class="l1"><a href="https://github.com/Dhillvn/Caesar/issues/161">Caesar #161</a></div>
+      <div class="l2"><span class="tag tag-landed">LANDED</span><span>$3.08</span><span>44 turns</span><span>14 Aug 18:55</span></div></div>
+  </div>
+
+  <div class="card">
+    <h3>Legend</h3>
+    <div class="legend">
+      <span><i style="background:#d29922"></i>Needs you</span>
+      <span><i style="background:#58a6ff"></i>Ongoing</span>
+      <span><i style="background:#4b535c"></i>Queued</span>
+      <span><i style="background:#f85149"></i>Blocked</span>
+    </div>
+  </div>
+</aside>
+</div>
+</body></html>

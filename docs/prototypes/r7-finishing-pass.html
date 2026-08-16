@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Caesar — round 7: the finishing pass</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+/* ==============================================================
+   CAESAR — ROUND 7. Built against /DESIGN.md (Factory + Numen accents).
+   Source spec: docs/prototypes/design-md/factory.md
+
+   Settled before this round and held constant:
+     - card per map (#182)
+     - maps lead the page, Bone card below them (Raj, round 1)
+     - grouped card body: state subheadings, blocked collapsed (Raj, round 2)
+     - ONE column (Raj, round 3)
+
+   Fixed as a defect, not offered as a choice:
+     the row is now a CSS grid with fixed tracks, so type / who /
+     blocked-by / state line up down the whole card. Previously the
+     copper dot on "Ongoing" pushed its own text out of column.
+
+     - the map's issue number leads the card (Raj, round 4)
+     - state reads as glyph + coloured number + word, with
+       copper = needs you, teal = ongoing, Bone = queued,
+       Graphite = blocked (Raj, round 4)
+
+     - the top of the page is the one-line instrument strip, not
+       the full hero (Raj, round 5)
+
+     - the map card is a Dashboard Frame (Raj, round 6)
+
+   The variable under test: how the six page-level metrics are drawn,
+   because ruling the strip in round 5 left Factory's Metric Tile —
+   36px value on a hairline divider — used nowhere on the page.
+   A = bare strip (control) · B = the same strip with tile-sized
+   values · C = a full Metric Tile row inside its own frame.
+
+   Settled here without a variant, each with an obvious answer:
+     - the whole row is the click target, not just the title
+     - the sweep stamp turns copper past 3 minutes, so a stalled
+       refresh loop cannot pass for a fresh one
+     - a map with nothing open says so, and says what closed it
+     - the footer is built to the spec's shape: mono column headings,
+       14px links, brand mark, 96px padding
+   Density (comfortable per spec vs tight) is on the D key, and it is
+   a deviation to be recorded in DESIGN.md if the tight one is taken.
+
+   DELIBERATE DEVIATION, to be recorded in DESIGN.md if this ships:
+   factory.md gives the Dashboard Frame the role "product hero" and
+   its header bar a 12px mono title. Here it is a content card, and
+   the map number sits in the bar at 20px so it stays scannable —
+   the identity Raj navigates by (he names sessions "178-ui").
+   ============================================================== */
+:root{
+  --obsidian-canvas:#101010; --carbon-lift:#1d1a18; --ash-stroke:#3d3a39;
+  --graphite-mid:#4d4947; --warm-granite:#8a8380; --pale-stone:#b8b3b0;
+  --bone:#eeeeee; --chalk:#fafafa;
+  --copper-signal:#C87941;  /* live status. 5.68:1 on canvas */
+  --teal-metric:#0D9488;   /* settled state. 5.09:1 on canvas */
+  --btn-dark:#1f1d1c; --frame:#0d0d0d;
+  --font-geist:'Geist',Inter,system-ui,ui-sans-serif,sans-serif;
+  --font-geist-mono:'Geist Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --page-max-width:1200px; --section-gap:96px; --card-padding:24px; --element-gap:24px;
+  --radius-nav:3px; --radius-buttons:3px; --radius-cards:10px; --radius-largepanels:20px;
+  /* the row's fixed tracks — every row and every group heading shares them,
+     which is what makes the columns line up */
+  --row-grid: 18px 52px 1fr 104px 72px 150px 104px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--obsidian-canvas);color:var(--bone);
+  font:400 16px/1.5 var(--font-geist);-webkit-font-smoothing:antialiased}
+a{text-decoration:none;color:inherit;
+  transition:color .15s cubic-bezier(.4,0,.2,1),border-color .15s cubic-bezier(.4,0,.2,1)}
+.wrap{max-width:var(--page-max-width);margin:0 auto;padding:0 24px}
+.mono{font:400 12px/1 var(--font-geist-mono);letter-spacing:-.24px;text-transform:uppercase}
+
+/* ---------- Top Navigation Bar ---------- */
+nav{height:64px;display:flex;align-items:center;gap:24px;
+  max-width:var(--page-max-width);margin:0 auto;padding:0 24px}
+nav .mark{font:400 12px/1 var(--font-geist-mono);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--bone)}
+nav .links{display:flex;gap:28px;margin-left:16px}
+nav .links a{font:400 14px/1 var(--font-geist);text-transform:uppercase;
+  letter-spacing:-.02em;color:var(--bone)}
+nav .links a:hover{color:var(--warm-granite)}
+nav .right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.ghost{background:transparent;border:1px solid var(--ash-stroke);border-radius:0;
+  color:var(--bone);padding:12px 16px;font:400 14px/1 var(--font-geist);cursor:pointer}
+.ghost:hover{color:var(--chalk);border-color:var(--chalk)}
+.light-btn{background:var(--chalk);color:var(--obsidian-canvas);border:0;
+  border-radius:var(--radius-buttons);padding:12px 14px;
+  font:400 14px/1 var(--font-geist);cursor:pointer}
+.dark-btn{background:var(--btn-dark);color:var(--bone);border:0;
+  border-radius:var(--radius-buttons);padding:12px 14px;
+  font:400 14px/1 var(--font-geist);cursor:pointer}
+
+/* ---------- variant switches: prototype chrome ---------- */
+.switch{display:flex;border:1px solid var(--ash-stroke);border-radius:var(--radius-buttons);
+  overflow:hidden}
+.switch button{background:transparent;border:0;color:var(--warm-granite);cursor:pointer;
+  padding:10px 12px;font:400 12px/1 var(--font-geist-mono);letter-spacing:-.24px;
+  text-transform:uppercase;border-left:1px solid var(--ash-stroke)}
+.switch button:first-child{border-left:0}
+.switch button[aria-pressed="true"]{background:var(--carbon-lift);color:var(--bone)}
+
+/* ---------- Hero ---------- */
+.hero{display:grid;grid-template-columns:1fr 2fr;gap:40px;align-items:start;padding-top:80px}
+.eyebrow{color:var(--pale-stone);margin-bottom:24px;display:flex;align-items:center;gap:8px}
+.pulse{width:6px;height:6px;border-radius:50%;background:var(--copper-signal);flex:none}
+h1{font:400 72px/1 var(--font-geist);letter-spacing:-2.88px;color:var(--bone);margin:0}
+.hero p{font:400 16px/1.5 var(--font-geist);color:var(--warm-granite);margin:24px 0 0}
+.hero .btns{display:flex;gap:16px;margin-top:32px}
+
+/* ---------- Dashboard Frame ---------- */
+.frame{background:var(--frame);border-radius:var(--radius-cards);overflow:hidden}
+.frame .bar{display:flex;align-items:center;gap:8px;padding:12px 16px;background:var(--carbon-lift)}
+.dot{width:8px;height:8px;border-radius:50%}
+.frame .bar .title{margin-left:12px;color:var(--pale-stone)}
+.frame .bar .live{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--pale-stone)}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr)}
+.tile{padding:20px;border-top:1px solid var(--carbon-lift);border-left:1px solid var(--carbon-lift)}
+.tile:nth-child(3n+1){border-left:0}
+.tile .lab{color:var(--pale-stone)}
+.tile .val{font:400 36px/1.1 var(--font-geist);letter-spacing:-1.12px;color:var(--bone);margin-top:12px}
+
+/* ---------- the variable: what sits above the maps ---------- */
+body[data-top="B"] #hero,body[data-top="C"] #hero{display:none}
+body[data-top="A"] #bar,body[data-top="C"] #bar{display:none}
+/* B: one instrument strip, full width, no headline and no frame chrome */
+#bar{display:flex;align-items:baseline;gap:32px;flex-wrap:wrap;margin-top:32px;
+  padding:20px 0;border-top:1px solid var(--carbon-lift);
+  border-bottom:1px solid var(--carbon-lift)}
+#bar .m{display:flex;align-items:baseline;gap:8px}
+#bar .m .v{font:400 20px/1 var(--font-geist);letter-spacing:-.4px;color:var(--bone)}
+#bar .m .l{color:var(--warm-granite)}
+#bar .m.hot .v{color:var(--copper-signal)}
+#bar .fresh{margin-left:auto;color:var(--graphite-mid);display:flex;align-items:center;gap:8px}
+/* B: tile-sized values in the strip — the Metric Tile's voice, the strip's height */
+body[data-metric="B"] #bar .m .v{font-size:36px;line-height:1.1;letter-spacing:-1.12px}
+body[data-metric="B"] #bar{gap:0;padding:0;border:0;align-items:stretch;display:grid;
+  grid-template-columns:repeat(6,1fr)}
+body[data-metric="B"] #bar .m{display:block;padding:16px 20px;
+  border-top:1px solid var(--carbon-lift);border-bottom:1px solid var(--carbon-lift);
+  border-left:1px solid var(--carbon-lift)}
+body[data-metric="B"] #bar .m:first-child{border-left:0}
+body[data-metric="B"] #bar .m .l{display:block;margin-bottom:10px}
+body[data-metric="B"] #bar .fresh{display:none}
+/* C: the strip becomes its own Dashboard Frame — chrome bar and six tiles */
+body[data-metric="C"] #bar{display:none}
+#mframe{display:none;margin-top:32px}
+body[data-metric="C"] #mframe{display:block}
+
+/* freshness: a stale sweep must not read as a fresh one */
+.stale{color:var(--copper-signal) !important}
+.stale .pulse{background:var(--copper-signal)}
+
+/* density — spec says comfortable; tight is a deviation, on the D key */
+body[data-density="tight"]{--section-gap:56px}
+body[data-density="tight"] .row{padding:7px 12px}
+body[data-density="tight"] .ghead{padding:12px 0 4px}
+body[data-density="tight"] .grid{gap:16px}
+
+/* a map with nothing open */
+.done{padding:20px 0 4px;color:var(--warm-granite);
+  font:400 14px/1.43 var(--font-geist)}
+.done .lab{color:var(--teal-metric);display:block;margin-bottom:8px}
+
+/* C: the counts ride in the section heading instead of a band of their own */
+#inline{display:none;color:var(--warm-granite);margin-left:auto}
+body[data-top="C"] #inline{display:block}
+body[data-top="C"] #maps{padding-top:40px}
+
+/* ---------- one column, ruled in round 3 ---------- */
+.sec-head{display:flex;align-items:baseline;gap:16px;margin-bottom:32px}
+.sec-head h2{font:400 44px/1.12 var(--font-geist);letter-spacing:-1.1px;margin:0}
+.grid{display:grid;grid-template-columns:1fr;gap:var(--element-gap)}
+.card{background:transparent;border:1px solid var(--carbon-lift);
+  border-radius:var(--radius-cards);padding:24px}
+
+/* ---------- the variable: the map card as a Dashboard Frame ----------
+   Same panel treatment the hero uses — #0d0d0d, 10px radius, a dark
+   chrome bar, hairline-divided tiles. No shadow: depth is contrast. */
+.grid[data-card="B"] .card,.grid[data-card="C"] .card{
+  background:var(--frame);border:0;border-radius:var(--radius-cards);
+  padding:0;overflow:hidden}
+.cbar{display:none;align-items:center;gap:8px;padding:12px 16px;background:var(--carbon-lift)}
+.grid[data-card="B"] .cbar,.grid[data-card="C"] .cbar{display:flex}
+.cbar .num{font:400 20px/1 var(--font-geist-mono);letter-spacing:-.4px;color:var(--bone);
+  margin-left:12px;flex:none}
+.cbar .num .hash{color:var(--graphite-mid)}
+.cbar .t{color:var(--pale-stone);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cbar .right{margin-left:auto;display:flex;align-items:center;gap:16px;flex:none}
+.cbar .repo{color:var(--warm-granite)}
+.cbar .copy{background:transparent;border:0;cursor:pointer;color:var(--graphite-mid);
+  font:400 12px/1 var(--font-geist-mono);letter-spacing:-.24px;text-transform:uppercase;padding:0}
+.cbar .copy:hover{color:var(--bone)}
+/* the frame's own body padding, so rows do not touch the panel edge */
+.cbody{padding:0}
+.grid[data-card="B"] .cbody,.grid[data-card="C"] .cbody{padding:4px 20px 20px}
+/* the bordered control keeps its old head; the frame hides it */
+.grid[data-card="B"] .chead,.grid[data-card="C"] .chead{display:none}
+.grid[data-card="B"] .meta{margin-top:16px}
+
+/* C: a Metric Tile row inside the frame, exactly the hero's tile treatment */
+.ctiles{display:none;grid-template-columns:repeat(4,1fr)}
+.grid[data-card="C"] .ctiles{display:grid}
+.grid[data-card="C"] .meta{display:none}
+.ctile{padding:16px 20px;border-bottom:1px solid var(--carbon-lift);
+  border-left:1px solid var(--carbon-lift)}
+.ctile:first-child{border-left:0}
+.ctile .lab{color:var(--pale-stone)}
+.ctile .val{font:400 36px/1.1 var(--font-geist);letter-spacing:-1.12px;
+  color:var(--bone);margin-top:10px}
+
+/* the number leads: it is how Raj names the session and finds the map */
+.chead{display:flex;align-items:baseline;gap:16px}
+.chead .num{font:400 36px/1 var(--font-geist-mono);letter-spacing:-1.12px;
+  color:var(--bone);flex:none}
+.chead .num .hash{color:var(--graphite-mid)}
+.chead .t{font:400 20px/1.3 var(--font-geist);letter-spacing:-.031em;color:var(--pale-stone)}
+.chead .right{margin-left:auto;display:flex;align-items:center;gap:16px;flex:none}
+.chead .repo{color:var(--warm-granite)}
+.chead .copy{background:transparent;border:0;cursor:pointer;color:var(--graphite-mid);
+  font:400 12px/1 var(--font-geist-mono);letter-spacing:-.24px;text-transform:uppercase;padding:0}
+.chead .copy:hover{color:var(--bone)}
+.meta{color:var(--warm-granite);font:400 14px/1.43 var(--font-geist);margin-top:12px}
+
+/* ---------- rows: one grid, fixed tracks, nothing free-floating ---------- */
+.rows{margin-top:4px}
+/* the whole row is the target: a 14px title is a small thing to hit */
+.row{display:grid;grid-template-columns:var(--row-grid);gap:12px;align-items:baseline;
+  padding:11px 12px;margin:0 -12px;border-top:1px solid var(--carbon-lift);position:relative}
+.rows.grp .row:first-child{border-top:0}
+.row .hit{position:absolute;inset:0}
+.row:hover{background:var(--carbon-lift)}
+.row:hover .rt{color:var(--chalk)}
+.gl{font:400 12px/1.6 var(--font-geist-mono);color:var(--graphite-mid);text-align:center}
+.rn{font:400 12px/1.6 var(--font-geist-mono);letter-spacing:-.24px;color:var(--graphite-mid)}
+.rt{font:400 14px/1.43 var(--font-geist);color:var(--bone);min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.col{font:400 12px/1.6 var(--font-geist-mono);letter-spacing:-.24px;text-transform:uppercase;
+  color:var(--warm-granite);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.col.blk{color:var(--graphite-mid)}
+.st{font:400 12px/1.6 var(--font-geist-mono);letter-spacing:-.24px;text-transform:uppercase;
+  color:var(--warm-granite);white-space:nowrap}
+/* the two accents and two neutrals do all the state work. No third accent.
+   Assignment ruled by Raj, round 4: copper is attention, teal is progress,
+   Bone is waiting, Graphite is stalled. */
+.c-copper{color:var(--copper-signal)}   /* needs you */
+.c-teal{color:var(--teal-metric)}       /* ongoing */
+.c-bone{color:var(--bone)}              /* queued */
+.c-graphite{color:var(--graphite-mid)}  /* blocked */
+
+/* variant gating: the glyph column and the coloured number are opt-in */
+.grid[data-v="A"] .gl,.grid[data-v="B"] .gl{visibility:hidden}
+.grid[data-v="A"] .rn{color:var(--graphite-mid) !important}
+
+/* state subheadings — share the row's own track so counts sit under State */
+.ghead{display:grid;grid-template-columns:var(--row-grid);gap:12px;
+  color:var(--pale-stone);padding:18px 0 6px;border-top:1px solid var(--carbon-lift)}
+.ghead .lab{grid-column:2 / 4}
+.ghead .ct{grid-column:7;color:var(--graphite-mid)}
+details.blocked{border-top:1px solid var(--carbon-lift);padding-top:14px;margin-top:4px}
+details.blocked summary{cursor:pointer;list-style:none;color:var(--graphite-mid);
+  font:400 12px/1.6 var(--font-geist-mono);letter-spacing:-.24px;text-transform:uppercase}
+details.blocked summary::-webkit-details-marker{display:none}
+details.blocked summary:hover{color:var(--warm-granite)}
+.more{margin-top:20px;display:inline-block;color:var(--bone);font:400 14px/1 var(--font-geist)}
+.more span{border-bottom:1px solid var(--ash-stroke);padding-bottom:6px}
+.more:hover span{color:var(--chalk);border-color:var(--chalk)}
+
+/* ---------- Ledger ---------- */
+.ledger{width:100%;border-collapse:collapse;margin-top:32px}
+.ledger th{text-align:left;padding:0 16px 12px 0;color:var(--pale-stone);
+  font:400 12px/1 var(--font-geist-mono);letter-spacing:-.24px;text-transform:uppercase;
+  border-bottom:1px solid var(--carbon-lift)}
+.ledger td{padding:16px 16px 16px 0;border-bottom:1px solid var(--carbon-lift);
+  font:400 14px/1.43 var(--font-geist);color:var(--bone);vertical-align:top}
+.ledger td.m{font-family:var(--font-geist-mono);letter-spacing:-.24px;
+  color:var(--warm-granite);font-size:12px;text-transform:uppercase}
+.ledger .sub{display:block;color:var(--warm-granite);margin-top:4px;
+  font:400 12px/1.4 var(--font-geist-mono);letter-spacing:-.24px;text-transform:uppercase}
+
+/* ---------- CTA Section Card ---------- */
+.cta{background:var(--bone);border-radius:var(--radius-cards);padding:var(--card-padding);
+  color:var(--obsidian-canvas);max-width:560px;position:relative;overflow:hidden}
+.cta::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.055;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter><rect width='120' height='120' filter='url(%23n)'/></svg>")}
+.cta .cap{color:var(--obsidian-canvas);display:flex;align-items:center;gap:8px}
+.cta h2{font:400 36px/1.1 var(--font-geist);letter-spacing:-1.12px;
+  color:var(--obsidian-canvas);margin:16px 0 0}
+.cta ul{list-style:none;margin:24px 0 0;padding:0}
+.cta li{display:flex;gap:12px;padding:10px 0;border-top:1px solid rgba(16,16,16,.14);
+  font:400 14px/1.43 var(--font-geist)}
+.cta li .n{font-family:var(--font-geist-mono);font-size:12px;letter-spacing:-.24px;
+  color:var(--graphite-mid);width:56px;flex:none;line-height:1.6}
+.cta .dark-btn{margin-top:24px;background:var(--obsidian-canvas)}
+
+section{padding-top:var(--section-gap)}
+/* Footer per spec: mono column headings, 14px links, no dividers,
+   generous column gap, brand mark, 96px+ padding. */
+footer{padding:var(--section-gap) 0 96px;border-top:1px solid var(--carbon-lift);
+  margin-top:var(--section-gap)}
+footer .cols{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:36px}
+footer .h{color:var(--bone);margin-bottom:20px}
+footer a{display:block;font:400 14px/2 var(--font-geist);color:var(--warm-granite)}
+footer a:hover{color:var(--bone)}
+footer .brand{font:400 44px/1.12 var(--font-geist);letter-spacing:-1.1px;color:var(--bone);
+  margin:0 0 16px}
+footer p{font:400 14px/1.6 var(--font-geist);color:var(--warm-granite);margin:0;max-width:420px}
+footer .foot-note{margin-top:56px;color:var(--graphite-mid)}
+</style>
+</head>
+<!-- top locked to the strip, ruled in round 5 -->
+<body data-top="B" data-metric="A" data-density="comfortable">
+
+<nav>
+  <span class="mark">Caesar</span>
+  <span class="links"><a href="#maps">Maps</a><a href="#queue">Queue</a><a href="#ledger">Ledger</a></span>
+  <span class="right">
+    <span class="mono" id="stamp" style="color:#b8b3b0"></span>
+    <span class="switch" id="metrics">
+      <button data-m="A" aria-pressed="true">A · strip</button>
+      <button data-m="B" aria-pressed="false">B · big strip</button>
+      <button data-m="C" aria-pressed="false">C · tile frame</button>
+    </span>
+    <span class="switch" id="dens">
+      <button data-d="comfortable" aria-pressed="true">comfortable</button>
+      <button data-d="tight" aria-pressed="false">tight</button>
+    </span>
+    <span class="switch" id="count">
+      <button data-n="4" aria-pressed="true">4 maps</button>
+      <button data-n="6" aria-pressed="false">6 maps</button>
+    </span>
+    <button class="light-btn">Sweep now</button>
+  </span>
+</nav>
+
+<div class="wrap">
+  <!-- A/B: one instrument strip. Same six metrics, one line, no chrome. -->
+  <div id="bar"></div>
+
+  <!-- C: the six metrics as real Metric Tiles inside their own Dashboard Frame -->
+  <div class="frame" id="mframe">
+    <div class="bar">
+      <span class="dot" style="background:#ff5f57"></span>
+      <span class="dot" style="background:#febc2e"></span>
+      <span class="dot" style="background:#28c840"></span>
+      <span class="title mono">caesar — frontier</span>
+      <span class="live mono" id="mfresh"><span class="pulse"></span></span>
+    </div>
+    <div class="tiles" id="mtiles" style="grid-template-columns:repeat(6,1fr)"></div>
+  </div>
+
+  <div class="hero" id="hero">
+    <div>
+      <div class="eyebrow mono"><span class="pulse"></span>Command centre</div>
+      <h1>Every map, one surface.</h1>
+      <p id="sub"></p>
+      <div class="btns">
+        <button class="dark-btn">Take the next ticket</button>
+        <button class="ghost">Status table</button>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="bar">
+        <span class="dot" style="background:#ff5f57"></span>
+        <span class="dot" style="background:#febc2e"></span>
+        <span class="dot" style="background:#28c840"></span>
+        <span class="title mono">caesar — frontier</span>
+        <span class="live mono"><span class="pulse"></span>live</span>
+      </div>
+      <div class="tiles" id="tiles"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <section id="maps">
+    <div class="sec-head">
+      <span class="mono" style="color:#b8b3b0">Frontiers</span>
+      <h2 id="mapshead"></h2>
+      <span class="mono" id="inline"></span>
+    </div>
+    <!-- card locked to the frame, ruled in round 6 -->
+    <div class="grid" id="grid" data-v="C" data-card="B"></div>
+  </section>
+
+  <section id="queue">
+    <div class="sec-head">
+      <span class="mono" style="color:#b8b3b0">Your queue</span>
+      <h2>What will not move without you</h2>
+    </div>
+    <div class="cta" id="cta"></div>
+  </section>
+
+  <section id="ledger">
+    <div class="sec-head">
+      <span class="mono" style="color:#b8b3b0">Ledger</span>
+      <h2>What the last runs cost</h2>
+    </div>
+    <table class="ledger" id="runs"></table>
+  </section>
+
+  <footer>
+    <div class="cols">
+      <div>
+        <div class="brand">Caesar</div>
+        <p id="foot"></p>
+      </div>
+      <div>
+        <div class="h mono">Maps</div>
+        <a href="#maps">Frontiers</a><a href="#queue">Your queue</a><a href="#ledger">Ledger</a>
+      </div>
+      <div>
+        <div class="h mono">Repos</div>
+        <a href="https://github.com/Dhillvn/Caesar/issues">Dhillvn/Caesar</a>
+        <a href="https://github.com/Dhillvn/numen-ops/issues">Dhillvn/numen-ops</a>
+      </div>
+      <div>
+        <div class="h mono">Runs</div>
+        <a href="#ledger">Recent runs</a><a href="#ledger">Open PRs</a>
+        <a href="#ledger">Agent slots</a>
+      </div>
+    </div>
+    <div class="foot-note mono" id="footnote"></div>
+  </footer>
+</div>
+
+<script src="data.js"></script>
+<script>
+// ponytail: one row template, three variants gated in CSS. No per-variant markup.
+var esc = function(s){return String(s).replace(/[&<>]/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});};
+
+var EXTRA = [
+  { repo:"Dhillvn/Caesar", num:191, letter:"E",
+    title:"A centurion reports its own failure modes back into the session",
+    decided:4, last:{n:189,t:"Classify a failure before retrying it"},
+    t:[[192,"Rule what a killed centurion leaves behind","grilling","You","Needs you",""],
+       [193,"Survey every exit path spawn-ticket-agent takes","research","Caesar","Ongoing",""],
+       [194,"Write the failure back onto the ticket, not the map","task","Caesar","Queued",""],
+       [195,"Retry once, and only once","task","Caesar","Blocked","193"]] },
+  { repo:"Dhillvn/numen-ops", num:35, letter:"F",
+    title:"Every credential the scheduled jobs hold is scoped and dated",
+    decided:6, last:{n:88,t:"Name an owner for each of the nine jobs"},
+    t:[[89,"Decide the trust surface a cloud runner may see","grilling","You","Queued",""],
+       [90,"Sweep the machine for unregistered credentials","task","Caesar","Ongoing",""],
+       [91,"Rule the contract guard question left open at charting","grilling","You","Queued",""]] }
+];
+
+// One state -> one class, used by the glyph, the number and the word alike.
+// Four values across two accents and two neutrals: no third accent is added.
+var STATE = {
+  'Needs you': { cls:'c-copper',   gl:'◆' },  /* filled diamond — wants your hands */
+  'Ongoing':   { cls:'c-teal',     gl:'●' },  /* filled circle  — a centurion is on it */
+  'Queued':    { cls:'c-bone',     gl:'○' },  /* open circle    — takeable, waiting */
+  'Blocked':   { cls:'c-graphite', gl:'⊘' }   /* slashed circle — waiting on another ticket */
+};
+function st(t){ return STATE[t[4]] || STATE['Queued']; }
+
+function rowHtml(m, t){
+  var s = st(t);
+  // the whole row is the target; the overlay sits under the text so the
+  // title still shows its own hover, and text stays selectable above it
+  return '<div class="row">' +
+    '<a class="hit" href="' + issueUrl(m, t[0]) + '" aria-label="' + esc(t[1]) + '"></a>' +
+    '<span class="gl ' + s.cls + '">' + s.gl + '</span>' +
+    '<span class="rn ' + s.cls + '">' + t[0] + '</span>' +
+    '<span class="rt"><a href="' + issueUrl(m, t[0]) + '">' + esc(t[1]) + '</a></span>' +
+    '<span class="col">' + t[2] + '</span>' +
+    '<span class="col">' + (t[3] === 'You' ? 'you' : 'caesar') + '</span>' +
+    '<span class="col blk">' + (t[5] ? 'blocked by ' + t[5] : '') + '</span>' +
+    '<span class="st ' + s.cls + '">' + t[4] + '</span></div>';
+}
+
+function bodyC(m){
+  // a finished map is a real state, not an edge case: 5 of 9 driven maps
+  // read "nothing open" on the sweep taken while this map was charted
+  if (!m.t.length) {
+    return '<div class="done"><span class="lab mono">nothing open — the way is clear</span>' +
+      (m.last ? 'Last decided: #' + m.last.n + ' ' + esc(m.last.t) + '.' : '') +
+      ' ' + m.decided + ' decisions in total. Retire its <span class="mono">caesar:driving</span> ' +
+      'label, or reopen the map with a new ticket.</div>';
+  }
+  var out = ['Needs you','Ongoing','Queued'].map(function(state){
+    var rows = sorted(m).filter(function(t){ return t[4] === state; });
+    if (!rows.length) return '';
+    return '<div class="ghead mono"><span class="lab">' + state + '</span>' +
+      '<span class="ct">' + rows.length + '</span></div>' +
+      '<div class="rows grp">' + rows.map(function(t){ return rowHtml(m, t); }).join('') + '</div>';
+  }).join('');
+  var blocked = sorted(m).filter(function(t){ return t[4] === 'Blocked'; });
+  if (blocked.length) {
+    out += '<details class="blocked"><summary>' + blocked.length +
+      ' blocked &mdash; show</summary><div class="rows grp">' +
+      blocked.map(function(t){ return rowHtml(m, t); }).join('') + '</div></details>';
+  }
+  return out;
+}
+
+var COUNT = 4, EMPTY = false;
+function livemaps(){
+  var ms = (COUNT === 6 ? MAPS.concat(EXTRA) : MAPS).slice();
+  // E key: show the last map as finished, so the empty state can be judged
+  if (EMPTY) {
+    var last = ms[ms.length - 1];
+    ms[ms.length - 1] = { repo:last.repo, num:last.num, letter:last.letter, title:last.title,
+      decided:last.decided + last.t.length, last:last.last, t:[] };
+  }
+  return ms;
+}
+
+function renderGrid(){
+  var ms = livemaps();
+  document.getElementById('mapshead').textContent = ms.length + ' maps under way';
+  document.getElementById('grid').innerHTML = ms.map(function(m){
+    var blocked = m.t.filter(function(t){ return t[4] === 'Blocked'; }).length;
+    var needs = m.t.filter(function(t){ return t[4] === 'Needs you' || t[3] === 'You'; }).length;
+    var ongoing = m.t.filter(function(t){ return t[4] === 'Ongoing'; }).length;
+    return '<div class="card">' +
+      // the frame's chrome bar — the hero's own header, carrying the map's identity
+      '<div class="cbar mono">' +
+        '<span class="dot" style="background:#ff5f57"></span>' +
+        '<span class="dot" style="background:#febc2e"></span>' +
+        '<span class="dot" style="background:#28c840"></span>' +
+        '<span class="num"><span class="hash">#</span>' + m.num + '</span>' +
+        '<span class="t">' + esc(m.title) + '</span>' +
+        '<span class="right"><span class="repo">' + m.repo + '</span>' +
+        (ongoing ? '<span class="c-teal" style="display:flex;align-items:center;gap:6px">' +
+          '<span class="pulse" style="background:var(--teal-metric)"></span>live</span>' : '') +
+        '<button class="copy" data-url="' + issueUrl(m, m.num) + '">copy url</button></span>' +
+      '</div>' +
+      // Metric Tiles, only in C
+      '<div class="ctiles">' + [
+        ['open', m.t.length], ['need you', needs], ['blocked', blocked], ['decided', m.decided]
+      ].map(function(x){
+        return '<div class="ctile"><div class="lab mono">' + x[0] + '</div>' +
+               '<div class="val">' + x[1] + '</div></div>';
+      }).join('') + '</div>' +
+      '<div class="cbody">' +
+        // the bordered control's own head, hidden once the frame is on
+        '<div class="chead">' +
+          '<span class="num"><span class="hash">#</span>' + m.num + '</span>' +
+          '<span class="t">' + esc(m.title) + '</span>' +
+          '<span class="right"><span class="repo mono">' + m.repo + '</span>' +
+          '<button class="copy" data-url="' + issueUrl(m, m.num) + '">copy url</button></span>' +
+        '</div>' +
+        '<div class="meta">' + m.t.length + ' open &middot; ' + blocked + ' blocked &middot; ' +
+          m.decided + ' decided</div>' +
+        bodyC(m) +
+        '<a class="more" href="https://github.com/' + m.repo + '/issues/' + m.num +
+          '"><span>Open the map &rarr;</span></a>' +
+      '</div></div>';
+  }).join('');
+  renderCta();
+}
+function renderCta(){
+  var mine = [];
+  livemaps().forEach(function(m){
+    sorted(m).forEach(function(t){ if (t[4] === 'Needs you' || t[3] === 'You') mine.push({m:m,t:t}); });
+  });
+  document.getElementById('cta').innerHTML =
+    '<div class="cap mono"><span class="pulse"></span>' + mine.length + ' waiting</div>' +
+    '<h2>Nothing here moves until you rule it.</h2>' +
+    '<ul>' + mine.map(function(x){
+      return '<li><span class="n">' + x.m.num + '/' + x.t[0] + '</span>' +
+        '<span><a href="' + issueUrl(x.m, x.t[0]) + '">' + esc(x.t[1]) + '</a></span></li>';
+    }).join('') + '</ul>' +
+    '<button class="dark-btn">Take the next one</button>';
+}
+
+document.getElementById('metrics').addEventListener('click', function(e){
+  var b = e.target.closest('button[data-m]'); if (!b) return;
+  [].forEach.call(this.querySelectorAll('button'), function(x){
+    x.setAttribute('aria-pressed', String(x === b)); });
+  document.body.dataset.metric = b.dataset.m;
+});
+document.getElementById('dens').addEventListener('click', function(e){
+  var b = e.target.closest('button[data-d]'); if (!b) return;
+  [].forEach.call(this.querySelectorAll('button'), function(x){
+    x.setAttribute('aria-pressed', String(x === b)); });
+  document.body.dataset.density = b.dataset.d;
+});
+document.getElementById('count').addEventListener('click', function(e){
+  var b = e.target.closest('button[data-n]'); if (!b) return;
+  [].forEach.call(this.querySelectorAll('button'), function(x){
+    x.setAttribute('aria-pressed', String(x === b)); });
+  COUNT = Number(b.dataset.n); renderGrid();
+});
+document.addEventListener('keydown', function(e){
+  var v = { '1':'A', '2':'B', '3':'C' }[e.key];
+  if (v) document.querySelector('#metrics button[data-m="' + v + '"]').click();
+  if (e.key === '4' || e.key === '6')
+    document.querySelector('#count button[data-n="' + e.key + '"]').click();
+  if (e.key === 'd' || e.key === 'D')
+    document.querySelector('#dens button[aria-pressed="false"]').click();
+  if (e.key === 'e' || e.key === 'E') { EMPTY = !EMPTY; renderGrid(); }
+});
+document.addEventListener('click', function(e){
+  var c = e.target.closest('.copy'); if (!c) return;
+  navigator.clipboard && navigator.clipboard.writeText(c.dataset.url);
+  var was = c.textContent; c.textContent = 'copied';
+  setTimeout(function(){ c.textContent = was; }, 1200);
+});
+
+document.getElementById('stamp').textContent = 'swept ' + G.ago + ' ago';
+document.getElementById('sub').textContent =
+  G.needsRaj + ' of the ' + G.open + ' open tickets want your hands. Caesar holds ' +
+  G.caesarHolds + '. Nothing crosses into main without your word.';
+document.getElementById('tiles').innerHTML = [
+  ['open tickets', G.open], ['need you', G.needsRaj], ['caesar holds', G.caesarHolds],
+  ['decided', G.decided], ['agent slots', G.slotsUsed + ' / ' + G.slotsCap], ['maps driven', G.maps]
+].map(function(t){
+  return '<div class="tile"><div class="lab mono">' + t[0] + '</div>' +
+         '<div class="val">' + t[1] + '</div></div>';
+}).join('');
+
+// The same six metrics as the hero tiles, on one line. Copper marks the one
+// that is about Raj rather than about the work.
+document.getElementById('bar').innerHTML = [
+  ['open', G.open, false], ['need you', G.needsRaj, true], ['caesar holds', G.caesarHolds, false],
+  ['decided', G.decided, false], ['slots', G.slotsUsed + '/' + G.slotsCap, false],
+  ['maps', G.maps, false]
+].map(function(t){
+  return '<span class="m' + (t[2] ? ' hot' : '') + '"><span class="v">' + t[1] +
+         '</span><span class="l mono">' + t[0] + '</span></span>';
+}).join('') +
+'<span class="fresh mono"><span class="pulse"></span>swept ' + G.ago + ' ago</span>';
+
+// Freshness. The refresh loop rewrites this file every 60s (#179), so anything
+// past 3 minutes means the loop stopped — and a stopped loop showing stale
+// numbers is worse than a page showing an error. Copper says so.
+var STALE_AFTER = 180;
+function agoSeconds(s){
+  var m = /^(\d+)\s*([smh])/.exec(String(s));
+  if (!m) return 0;
+  return Number(m[1]) * ({ s:1, m:60, h:3600 }[m[2]]);
+}
+var isStale = agoSeconds(G.ago) > STALE_AFTER;
+document.getElementById('mfresh').innerHTML =
+  '<span class="pulse"></span>' + (isStale ? 'stale — swept ' + G.ago + ' ago' : 'live');
+if (isStale) {
+  document.getElementById('stamp').classList.add('stale');
+  document.getElementById('mfresh').classList.add('stale');
+}
+
+// The six page metrics as real Metric Tiles, for variant C.
+document.getElementById('mtiles').innerHTML = [
+  ['open', G.open], ['need you', G.needsRaj], ['caesar holds', G.caesarHolds],
+  ['decided', G.decided], ['slots', G.slotsUsed + '/' + G.slotsCap], ['maps', G.maps]
+].map(function(t){
+  return '<div class="tile"><div class="lab mono">' + t[0] + '</div>' +
+         '<div class="val">' + t[1] + '</div></div>';
+}).join('');
+
+document.getElementById('footnote').textContent =
+  'Generated ' + G.gen + ' · Factory, with Numen’s two accents · read-only, links out to GitHub';
+
+document.getElementById('inline').innerHTML =
+  G.open + ' open &middot; <span class="c-copper">' + G.needsRaj + ' need you</span> &middot; ' +
+  G.slotsUsed + '/' + G.slotsCap + ' slots &middot; swept ' + G.ago + ' ago';
+
+renderGrid();
+
+document.getElementById('runs').innerHTML =
+  '<thead><tr><th>Run</th><th>Repo</th><th>Result</th><th>Cost</th><th>Turns</th><th>When</th></tr></thead>' +
+  '<tbody>' + G.runs.map(function(r){
+    return '<tr><td class="m">#' + r.n + '</td><td class="m">' + r.repo + '</td>' +
+      '<td><span class="st ' + (r.cls.indexOf('ERROR') === 0 ? 'c-copper' : 'c-teal') + '">' +
+      r.cls + '</span>' + (r.why ? '<span class="sub">' + r.why + '</span>' : '') + '</td>' +
+      '<td>' + r.cost + '</td><td class="m">' + r.turns + '</td>' +
+      '<td class="m">' + r.when + '</td></tr>';
+  }).join('') +
+  '<tr><td class="m">#' + G.pr.n + '</td><td class="m">' + G.pr.repo + '</td>' +
+  '<td><span class="st c-copper">' + (G.pr.draft ? 'draft pr — awaiting your word' : 'ready') +
+  '</span><span class="sub">' + esc(G.pr.t) + '</span></td>' +
+  '<td>&mdash;</td><td class="m">&mdash;</td><td class="m">open</td></tr></tbody>';
+
+document.getElementById('foot').textContent =
+  'Every Wayfinder map under way, on one surface. Press 1/2/3 for the metric treatment, ' +
+  '4 or 6 for map count, D for density, E for a finished map.';
+</script>
+</body>
+</html>

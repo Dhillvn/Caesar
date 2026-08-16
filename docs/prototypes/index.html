@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Caesar Command Centre — three directions</title>
+<style>
+  body{margin:0;background:#010409;color:#e6edf3;
+    font:14px/1.4 ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif}
+  header{padding:10px 16px;display:flex;gap:14px;align-items:center;
+    border-bottom:1px solid #30363d;background:#0d1117}
+  h1{font-size:13px;margin:0;letter-spacing:.14em;color:#8b949e;font-weight:500}
+  label{font-size:13px;color:#8b949e;display:flex;gap:6px;align-items:center;cursor:pointer}
+  .row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:10px;height:calc(100vh - 47px)}
+  .row.solo{grid-template-columns:1fr}
+  figure{margin:0;display:flex;flex-direction:column;min-width:0;
+    border:1px solid #30363d;border-radius:8px;overflow:hidden;background:#0d1117}
+  figcaption{padding:7px 12px;font-size:12.5px;background:#161b22;border-bottom:1px solid #30363d;
+    display:flex;gap:10px;align-items:baseline}
+  figcaption b{font-size:13px}
+  figcaption span{color:#6e7681}
+  figcaption a{margin-left:auto;color:#58a6ff;text-decoration:none;font-size:12px}
+  iframe{flex:1;width:100%;border:0;background:#0d1117}
+  .hidden{display:none}
+</style></head><body>
+<header>
+  <h1>THREE DIRECTIONS — #182</h1>
+  <label><input type="radio" name="v" value="all" checked> side by side</label>
+  <label><input type="radio" name="v" value="a"> A only</label>
+  <label><input type="radio" name="v" value="b"> B only</label>
+  <label><input type="radio" name="v" value="c"> C only</label>
+</header>
+<div class="row" id="row">
+  <figure data-k="a"><figcaption><b>A · Ops table</b><span>one dense grid, sorted by who owns it</span><a href="a-ops-table.html" target="_blank">open</a></figcaption><iframe src="a-ops-table.html"></iframe></figure>
+  <figure data-k="b"><figcaption><b>B · Map board</b><span>a card per map, tickets nested inside</span><a href="b-map-board.html" target="_blank">open</a></figcaption><iframe src="b-map-board.html"></iframe></figure>
+  <figure data-k="c"><figcaption><b>C · Triage queue</b><span>your move first and large, Caesar's work folded</span><a href="c-triage-queue.html" target="_blank">open</a></figcaption><iframe src="c-triage-queue.html"></iframe></figure>
+</div>
+<script>
+  // ponytail: radio + class toggle, no router
+  document.querySelectorAll('input[name=v]').forEach(function(r){
+    r.onchange = function(){
+      var v = r.value, row = document.getElementById('row');
+      row.className = v === 'all' ? 'row' : 'row solo';
+      document.querySelectorAll('figure').forEach(function(f){
+        f.classList.toggle('hidden', v !== 'all' && f.dataset.k !== v);
+      });
+    };
+  });
+</script>
+</body></html>

@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Caesar — command centre (Slash)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ==============================================================
+   SLASH — built against docs/prototypes/design-md/slash.md
+   Native palette. Ivy Presto -> Playfair Display (its own first
+   named substitute). Serif never below 28px, sans never above
+   48px — the Serif/Sans Collision System is the brand.
+   ============================================================== */
+:root{
+  /* Tokens - Colors */
+  --obsidian:#08080a; --onyx:#040406; --carbon:#121317; --graphite:#1c1d22;
+  --slate:#2e3038; --smoke:#464853; --ash:#5e616e; --steel:#777a88;
+  --fog:#9194a1; --mist:#acafb9; --silver:#c7c9d1; --bone:#e2e3e9;
+  --paper-white:#ffffff; --copper:#cc9166;
+  --gradient-gilded:linear-gradient(103deg,rgb(174,147,87),rgb(255,240,204) 40%,rgb(174,147,87) 70%,rgba(189,157,79,0));
+  /* the Status Badge is specified as "a desaturated sage" with no hex given */
+  --sage:#8fa889;
+  /* Typography */
+  --font-ivy:'Playfair Display',Georgia,serif;
+  --font-inter:'Inter',ui-sans-serif,system-ui,sans-serif;
+  /* Layout */
+  --page-max-width:1216px; --section-gap:160px; --card-padding:24px; --element-gap:8px;
+  /* Radius */
+  --radius-nav:2px; --radius-cards:10px; --radius-full:9999px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--obsidian);color:var(--bone);
+  font:400 16px/1.5 var(--font-inter);-webkit-font-smoothing:antialiased}
+.wrap{max-width:var(--page-max-width);margin:0 auto;padding:0 24px}
+a{text-decoration:none;color:inherit}
+
+/* serif is display only — 28px and above, +0.01em tracking */
+.serif{font-family:var(--font-ivy);font-weight:400;letter-spacing:.01em;
+  color:var(--paper-white)}
+
+/* ---------- Navigation ---------- */
+nav{max-width:var(--page-max-width);margin:0 auto;padding:20px 24px;
+  display:flex;align-items:center;gap:8px}
+nav .logo{font:400 24px/1 var(--font-ivy);letter-spacing:.01em;color:var(--paper-white)}
+nav .menu{display:flex;gap:4px;margin-left:32px}
+nav .menu a{font:400 14px/1 var(--font-inter);color:var(--fog);padding:6px 10px;
+  border-bottom:2px solid transparent;border-radius:var(--radius-nav)}
+nav .menu a:hover{color:var(--paper-white);border-bottom-color:var(--paper-white)}
+nav .right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.ghost-btn{background:transparent;border:1px solid var(--paper-white);
+  border-radius:var(--radius-full);color:var(--paper-white);padding:10px 20px;
+  font:500 14px/1 var(--font-inter);cursor:pointer}
+/* the one loud signal — exactly once per viewport */
+.white-btn{background:var(--paper-white);border:0;border-radius:var(--radius-full);
+  color:#000;padding:10px 20px;font:500 14px/1 var(--font-inter);cursor:pointer}
+.pill-tag{background:transparent;border:1px solid var(--steel);
+  border-radius:var(--radius-full);color:var(--paper-white);padding:6px 10px;
+  font:400 12px/1 var(--font-inter);cursor:pointer;white-space:nowrap}
+
+/* ---------- Hero: split composition ---------- */
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:48px;
+  align-items:center;padding-top:105px}
+.eyebrow{font:600 13px/1 var(--font-inter);letter-spacing:-.02em;color:var(--copper);
+  text-transform:uppercase}
+.hero h1{font:400 88px/1 var(--font-ivy);letter-spacing:.88px;
+  color:var(--paper-white);margin:24px 0 0}
+.hero .lede{font:400 20px/1.38 var(--font-inter);letter-spacing:-.8px;
+  color:var(--fog);margin:24px 0 0;max-width:34ch}
+/* Email Capture Input — pill input reading as one unit with its button */
+.capture{display:flex;align-items:center;gap:8px;margin-top:32px;
+  border:1px solid var(--paper-white);border-radius:var(--radius-full);
+  padding:4px 4px 4px 20px;max-width:420px}
+.capture input{flex:1;background:transparent;border:0;outline:0;
+  color:var(--bone);font:400 14px/1 var(--font-inter)}
+.capture input::placeholder{color:var(--steel)}
+
+/* ---------- Hero Chart Card ---------- */
+.chart-card{background:var(--onyx);border-radius:var(--radius-cards);
+  padding:var(--card-padding)}
+.chart-card .top{display:flex;align-items:flex-start;gap:12px}
+.chart-card .lab{font:400 13px/1 var(--font-inter);letter-spacing:-.26px;color:var(--fog)}
+.chart-card .big{font:500 48px/1 var(--font-inter);letter-spacing:-.04em;
+  color:var(--paper-white);margin-top:12px}
+.chart-card .filters{margin-left:auto;display:flex;gap:8px}
+.chart-card svg{display:block;margin-top:20px;width:100%;height:120px}
+/* Transaction List Card — dense rows with icon wells */
+.txns{margin-top:20px;border-top:1px solid var(--graphite);padding-top:12px}
+.txn{display:flex;align-items:center;gap:12px;padding:8px 0}
+.well{width:28px;height:28px;border-radius:var(--radius-full);
+  border:1px solid var(--slate);flex:none;display:grid;place-items:center;
+  font:400 12px/1 var(--font-inter);color:var(--steel);
+  box-shadow:rgba(255,255,255,.2) 0 0 0 1px}
+.txn .n{flex:1;font:400 14px/1.4 var(--font-inter);color:var(--bone)}
+.txn .v{font:400 14px/1 var(--font-inter);color:var(--fog)}
+
+/* ---------- Stat Display band — serif numerals ---------- */
+.stats{display:flex;gap:64px;flex-wrap:wrap;justify-content:center;
+  padding-top:var(--section-gap)}
+.stat{text-align:center}
+.stat .n{font:400 44px/1.1 var(--font-ivy);letter-spacing:.44px;color:var(--paper-white)}
+.stat .c{font:400 14px/1 var(--font-inter);color:var(--fog);margin-top:12px}
+
+/* ---------- Section heads: centred serif ---------- */
+.sec{padding-top:var(--section-gap)}
+.sec .head{text-align:center;max-width:640px;margin:0 auto 48px}
+.sec h2{font:400 52px/1.13 var(--font-ivy);letter-spacing:.52px;
+  color:var(--paper-white);margin:16px 0 0}
+.sec .sub{font:300 18px/1.38 var(--font-inter);letter-spacing:-.36px;
+  color:var(--mist);margin:16px 0 0}
+
+/* ---------- Blog Post Card grid = one card per map ---------- */
+/* no border, no fill — cards separate through whitespace alone */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
+  column-gap:16px;row-gap:32px}
+.card{background:transparent;border-radius:var(--radius-cards)}
+.card .cat{font:600 13px/1 var(--font-inter);letter-spacing:-.02em;color:var(--copper)}
+.card .cat .sep{color:var(--ash);font-weight:400}
+.card h3{font:500 20px/1.38 var(--font-inter);letter-spacing:-.8px;
+  color:var(--paper-white);margin:12px 0 0}
+.card .meta{font:400 13px/1.5 var(--font-inter);color:var(--mist);margin-top:8px}
+
+/* Data Table Row — hairline dividers, no container, high density */
+table{width:100%;border-collapse:collapse;margin-top:20px}
+th{text-align:left;font:500 14px/1 var(--font-inter);color:var(--fog);
+  padding:0 8px 10px 0;border-bottom:1px solid var(--graphite)}
+th.r,td.r{text-align:right}
+td{font:400 15px/1.4 var(--font-inter);color:var(--bone);
+  padding:10px 8px 10px 0;border-bottom:1px solid var(--graphite);vertical-align:top}
+td.num{font-size:14px;color:var(--ash);width:40px}
+td .blk{display:block;font:400 13px/1.4 var(--font-inter);color:var(--ash);margin-top:2px}
+tr:hover td{color:var(--paper-white)}
+
+/* Status Badge — pill, 1px border, never filled */
+.badge{display:inline-block;font:500 12px/1 var(--font-inter);padding:5px 10px;
+  border-radius:var(--radius-full);border:1px solid var(--steel);color:var(--mist);
+  white-space:nowrap}
+.badge.ok{border-color:var(--sage);color:var(--sage)}
+.badge.you{border-color:var(--paper-white);color:var(--paper-white)}
+.badge.off{border-color:var(--smoke);color:var(--ash)}
+
+footer{padding:var(--section-gap) 0 105px;background:var(--obsidian)}
+footer .rule{height:1px;background:var(--gradient-gilded);margin-bottom:40px}
+footer p{font:300 14px/1.56 var(--font-inter);color:var(--ash);margin:0;max-width:60ch}
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="logo">Caesar</span>
+  <span class="menu"><a href="#maps">Maps</a><a href="#ledger">Ledger</a><a href="#maps">Frontier</a></span>
+  <span class="right">
+    <button class="ghost-btn">Status table</button>
+    <button class="white-btn">Sweep now</button>
+  </span>
+</nav>
+
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <div class="eyebrow">Command centre</div>
+      <h1>Every map,<br>one page.</h1>
+      <p class="lede" id="lede"></p>
+      <div class="capture">
+        <input type="text" placeholder="Paste a map URL to drive it">
+        <button class="ghost-btn">Chart it</button>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="top">
+        <div>
+          <div class="lab">Open tickets</div>
+          <div class="big" id="big"></div>
+        </div>
+        <div class="filters">
+          <button class="pill-tag">7d</button>
+          <button class="pill-tag">30d</button>
+        </div>
+      </div>
+      <svg viewBox="0 0 480 120" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="gild" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0%" stop-color="rgb(174,147,87)"/>
+            <stop offset="40%" stop-color="rgb(255,240,204)"/>
+            <stop offset="70%" stop-color="rgb(174,147,87)"/>
+            <stop offset="100%" stop-color="rgba(189,157,79,0)"/>
+          </linearGradient>
+        </defs>
+        <polyline id="line" fill="none" stroke="url(#gild)" stroke-width="2"
+          vector-effect="non-scaling-stroke"/>
+      </svg>
+      <div class="txns" id="txns"></div>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <section class="sec" id="maps">
+    <div class="head">
+      <div class="eyebrow">Frontiers</div>
+      <h2>Four maps under way</h2>
+      <p class="sub">One card per map. Rows sort by what needs you first, then your queue,
+        then the work Caesar holds, then what is walled off behind a blocker.</p>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section class="sec" id="ledger">
+    <div class="head">
+      <div class="eyebrow">Ledger</div>
+      <h2>What the last runs cost</h2>
+    </div>
+    <table id="runs"></table>
+  </section>
+
+  <footer>
+    <div class="rule"></div>
+    <p id="foot"></p>
+  </footer>
+</div>
+
+<script src="data.js"></script>
+<script>
+// ponytail: template strings + innerHTML. Static prototype, no framework.
+var esc = function(s){return String(s).replace(/[&<>]/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});};
+
+document.getElementById('lede').textContent =
+  G.needsRaj + ' of the ' + G.open + ' open tickets want your hands. Caesar holds ' +
+  G.caesarHolds + ', and nothing crosses into main without your word.';
+document.getElementById('big').textContent = G.open;
+
+// ponytail: fixed series, enough to read as a trend line.
+var series = [14,16,17,19,20,20,21,21,21,21];
+(function(){
+  var max = Math.max.apply(null, series), min = Math.min.apply(null, series);
+  var span = (max - min) || 1;
+  document.getElementById('line').setAttribute('points', series.map(function(v,i){
+    return (i * (480 / (series.length - 1))).toFixed(1) + ',' +
+           (110 - ((v - min) / span) * 96).toFixed(1);
+  }).join(' '));
+})();
+
+// Transaction List Card — the tickets flagged for Raj, densest possible
+var mine = [];
+MAPS.forEach(function(m){
+  sorted(m).forEach(function(t){
+    if (t[4] === 'Needs you') mine.push({ m: m, t: t });
+  });
+});
+document.getElementById('txns').innerHTML = mine.map(function(x){
+  return '<div class="txn"><span class="well">' + x.m.letter + '</span>' +
+    '<span class="n"><a href="' + issueUrl(x.m, x.t[0]) + '">' + esc(x.t[1]) + '</a></span>' +
+    '<span class="v">#' + x.t[0] + '</span></div>';
+}).join('') +
+  '<div class="txn"><span class="well">PR</span><span class="n"><a href="' + G.pr.url + '">' +
+  esc(G.pr.t) + '</a></span><span class="v">#' + G.pr.n + '</span></div>';
+
+document.getElementById('stats').innerHTML = [
+  [G.maps, 'maps driven'], [G.needsRaj, 'need you'], [G.caesarHolds, 'Caesar holds'],
+  [G.decided, 'decided'], [G.slotsUsed + '/' + G.slotsCap, 'agent slots']
+].map(function(s){
+  return '<div class="stat"><div class="n">' + s[0] + '</div>' +
+         '<div class="c">' + s[1] + '</div></div>';
+}).join('');
+
+document.getElementById('grid').innerHTML = MAPS.map(function(m){
+  var rows = sorted(m).map(function(t){
+    var state = t[4], owner = t[3];
+    var cls = (state === 'Needs you' || owner === 'You') ? 'you'
+            : state === 'Ongoing' ? 'ok'
+            : state === 'Blocked' ? 'off' : '';
+    return '<tr><td class="num">' + t[0] + '</td>' +
+      '<td><a href="' + issueUrl(m, t[0]) + '">' + esc(t[1]) + '</a>' +
+      (t[5] ? '<span class="blk">blocked by ' + t[5] + '</span>'
+            : '<span class="blk">' + t[2] + '</span>') + '</td>' +
+      '<td class="r"><span class="badge ' + cls + '">' + state + '</span></td></tr>';
+  }).join('');
+  return '<div class="card">' +
+    '<div class="cat">Map ' + m.letter + ' <span class="sep">&middot;</span> ' +
+      m.repo + ' #' + m.num + '</div>' +
+    '<h3><a href="https://github.com/' + m.repo + '/issues/' + m.num + '">' +
+      esc(m.title) + '</a></h3>' +
+    '<div class="meta">' + m.t.length + ' open &middot; ' + m.decided + ' decided' +
+      (m.last ? ' &middot; last was #' + m.last.n + ' ' + esc(m.last.t)
+              : ' &middot; no decisions yet') + '</div>' +
+    '<table><thead><tr><th></th><th>Ticket</th><th class="r">State</th></tr></thead>' +
+    '<tbody>' + rows + '</tbody></table></div>';
+}).join('');
+
+document.getElementById('runs').innerHTML =
+  '<thead><tr><th></th><th>Repo</th><th>Result</th><th class="r">Cost</th>' +
+  '<th class="r">Turns</th><th class="r">When</th></tr></thead><tbody>' +
+  G.runs.map(function(r){
+    return '<tr><td class="num">' + r.n + '</td><td>' + r.repo + '</td>' +
+      '<td><span class="badge ' + (r.cls.indexOf('ERROR') === 0 ? 'off' : 'ok') + '">' +
+      r.cls + '</span>' + (r.why ? '<span class="blk">' + r.why + '</span>' : '') + '</td>' +
+      '<td class="r">' + r.cost + '</td><td class="r">' + r.turns + '</td>' +
+      '<td class="r" style="color:var(--fog)">' + r.when + '</td></tr>';
+  }).join('') +
+  '<tr><td class="num">' + G.pr.n + '</td><td>' + G.pr.repo + '</td>' +
+  '<td><span class="badge you">' + (G.pr.draft ? 'draft — awaiting your word' : 'ready') +
+  '</span><span class="blk">' + esc(G.pr.t) + '</span></td>' +
+  '<td class="r">&mdash;</td><td class="r">&mdash;</td>' +
+  '<td class="r" style="color:var(--fog)">open</td></tr></tbody>';
+
+document.getElementById('foot').textContent =
+  'Swept ' + G.ago + ' ago · generated ' + G.gen + '. Serif for display and statistics only, ' +
+  'never below 28px. Copper marks categories and nothing else. One white button per viewport. ' +
+  'The gilded gradient appears twice: the chart stroke and this rule.';
+</script>
+</body>
+</html>
