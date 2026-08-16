@@ -29,7 +29,10 @@ $ErrorActionPreference = 'Stop'
 $dataScript = Join-Path $PSScriptRoot 'dashboard-data.ps1'
 $renderScript = Join-Path $PSScriptRoot 'render-dashboard.ps1'
 
-$OutFile = [System.IO.Path]::GetFullPath((Join-Path (Get-Location) $OutFile))
+# Combine, not Join-Path: an absolute -OutFile joined onto the cwd produces
+# "H:\cwd\C:\path" and GetFullPath throws before the first tick. Combine returns the
+# second path unchanged when it is already rooted.
+$OutFile = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine((Get-Location).Path, $OutFile))
 $tmpFile = "$OutFile.tmp"
 
 $outDir = Split-Path -Parent $OutFile
@@ -73,7 +76,7 @@ try {
     while ($true) {
         try {
             $json = & $dataScript
-            & $renderScript -Json $json -OutFile $tmpFile
+            & $renderScript -Json $json -OutFile $tmpFile -IntervalSeconds $IntervalSeconds
             Swap-In
             $lastGoodJson = $json
             $consecutiveFailures = 0
@@ -84,7 +87,7 @@ try {
             Write-Host "[$failTime] sweep failed ($consecutiveFailures consecutive): $msg"
             if ($lastGoodJson) {
                 try {
-                    & $renderScript -Json $lastGoodJson -OutFile $tmpFile `
+                    & $renderScript -Json $lastGoodJson -OutFile $tmpFile -IntervalSeconds $IntervalSeconds `
                         -ErrorMessage $msg -ErrorTime $failTime.ToString('yyyy-MM-dd HH:mm:ss') -FailureCount $consecutiveFailures
                     Swap-In
                 } catch {

@@ -29,7 +29,12 @@ param(
     [string]$OutFile,
     [string]$ErrorMessage,
     [string]$ErrorTime,
-    [int]$FailureCount = 0
+    [int]$FailureCount = 0,
+    # The interval the generator believes it is running at, stamped on the page. The page
+    # has no JS and cannot age its own clock, so a dead loop freezes at "swept 0s ago" and
+    # the stale branch can never fire - Raj subtracts the stamped time against the wall
+    # clock instead (refresh doc section 5).
+    [int]$IntervalSeconds = 60
 )
 
 begin {
@@ -246,6 +251,7 @@ end {
         @{ l = 'decided'; v = $decided; hot = $false }
         @{ l = 'slots'; v = "$slotsUsed/$slotsCap"; hot = $false }
         @{ l = 'maps'; v = $mapCount; hot = $false }
+        @{ l = "swept &middot; every ${IntervalSeconds}s"; v = $genDto.ToLocalTime().ToString('HH:mm'); hot = $stale }
     ) | ForEach-Object {
         $hot = if ($_.hot) { ' hot' } else { '' }
         "<span class=`"m$hot`"><span class=`"v`">$($_.v)</span><span class=`"l mono`">$($_.l)</span></span>"
@@ -296,7 +302,7 @@ nav .right{margin-left:auto;display:flex;align-items:center;gap:12px}
 .frame{background:var(--frame);border-radius:var(--radius-cards);overflow:hidden}
 .frame .bar{display:flex;align-items:center;gap:8px;padding:12px 16px;background:var(--carbon-lift)}
 .dot{width:8px;height:8px;border-radius:50%}
-#bar{display:grid;grid-template-columns:repeat(6,1fr);gap:0;padding:0;margin-top:32px;
+#bar{display:grid;grid-template-columns:repeat(7,1fr);gap:0;padding:0;margin-top:32px;
   border-top:1px solid var(--carbon-lift);border-bottom:1px solid var(--carbon-lift)}
 #bar .m{display:block;padding:16px 20px;border-top:1px solid var(--carbon-lift);
   border-bottom:1px solid var(--carbon-lift);border-left:1px solid var(--carbon-lift)}
