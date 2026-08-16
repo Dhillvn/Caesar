@@ -20,13 +20,18 @@ the Skill tool refuses it — ask the harness where its plugin is installed inst
 
 ```powershell
 claude plugin list --json | ConvertFrom-Json |
-  ForEach-Object { Join-Path $_.installPath 'skills\wayfinder\SKILL.md' } |
-  Where-Object { Test-Path $_ }
+  ForEach-Object { Get-ChildItem (Join-Path $_.installPath 'skills') -Recurse -Filter SKILL.md -ErrorAction SilentlyContinue } |
+  Where-Object { $_.Directory.Name -eq 'wayfinder' } |
+  ForEach-Object { $_.FullName }
 ```
+
+The recursion is deliberate and must not be flattened back to a fixed depth: the plugin
+groups its skills under category directories — Wayfinder sits in `engineering\`, beside
+`productivity\`, `misc\` and `in-progress\` — and upstream may recategorise it again.
 
 `installPath` is the version the harness is actually using — **run that query each session and
 read Wayfinder from the path it returns.** Never write a literal path to
-Wayfinder and never glob the plugin cache: cache paths carry a version segment and old
+Wayfinder and never search the cache from its root: cache paths carry a version segment and old
 version directories are never removed, so a literal either breaks on the next upstream
 release or — worse, and silently — keeps resolving to a frozen copy while you believe you
 are reading current Wayfinder. If the command returns nothing, Wayfinder is not installed;
