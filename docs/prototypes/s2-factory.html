@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Caesar — command centre (Factory)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+/* ==============================================================
+   CAESAR — built against /DESIGN.md (Factory + Numen accents).
+   Source spec: docs/prototypes/design-md/factory.md
+   One substitution, slot for slot:
+     Signal Orange #ee6018 -> Warm Copper #C87941  (live state)
+     Metric Green  #a0ca92 -> Teal        #0D9488  (settled state)
+   Everything else is Factory's, unaltered.
+   Zero shadows anywhere: depth is #eeeeee-on-#101010 contrast.
+   ============================================================== */
+:root{
+  /* Tokens - Colors */
+  --obsidian-canvas:#101010; --carbon-lift:#1d1a18; --ash-stroke:#3d3a39;
+  --graphite-mid:#4d4947; --warm-granite:#8a8380; --pale-stone:#b8b3b0;
+  --bone:#eeeeee; --chalk:#fafafa;
+  /* the two functional accent slots, carrying Numen's brand colours */
+  --copper-signal:#C87941;  /* copper — live status. 5.68:1 on canvas */
+  --teal-metric:#0D9488;   /* teal   — settled state. 5.09:1 on canvas */
+  --btn-dark:#1f1d1c; --frame:#0d0d0d;
+  /* Typography */
+  --font-geist:'Geist',Inter,system-ui,ui-sans-serif,sans-serif;
+  --font-geist-mono:'Geist Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  /* Layout */
+  --page-max-width:1200px; --section-gap:96px; --card-padding:24px; --element-gap:24px;
+  /* Radius */
+  --radius-nav:3px; --radius-buttons:3px; --radius-cards:10px; --radius-largepanels:20px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--obsidian-canvas);color:var(--bone);
+  font:400 16px/1.5 var(--font-geist);-webkit-font-smoothing:antialiased}
+a{text-decoration:none;color:inherit;
+  transition:color .15s cubic-bezier(.4,0,.2,1),border-color .15s cubic-bezier(.4,0,.2,1)}
+.wrap{max-width:var(--page-max-width);margin:0 auto;padding:0 24px}
+
+/* the system's secondary voice */
+.mono{font:400 12px/1 var(--font-geist-mono);letter-spacing:-.24px;text-transform:uppercase}
+
+/* ---------- Top Navigation Bar ---------- */
+nav{height:64px;display:flex;align-items:center;gap:32px;
+  max-width:var(--page-max-width);margin:0 auto;padding:0 24px}
+nav .mark{font:400 12px/1 var(--font-geist-mono);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--bone)}
+nav .links{display:flex;gap:28px;margin-left:24px}
+nav .links a{font:400 14px/1 var(--font-geist);text-transform:uppercase;
+  letter-spacing:-.02em;color:var(--bone)}
+nav .links a:hover{color:var(--warm-granite)}
+nav .right{margin-left:auto;display:flex;align-items:center;gap:16px}
+/* Ghost Text Link — 0px radius, flat */
+.ghost{background:transparent;border:1px solid var(--ash-stroke);border-radius:0;
+  color:var(--bone);padding:12px 16px;font:400 14px/1 var(--font-geist);cursor:pointer}
+.ghost:hover{color:var(--chalk);border-color:var(--chalk)}
+/* Light Filled Button — appears once */
+.light-btn{background:var(--chalk);color:var(--obsidian-canvas);border:0;
+  border-radius:var(--radius-buttons);padding:12px 14px;
+  font:400 14px/1 var(--font-geist);cursor:pointer}
+/* Dark Filled Button */
+.dark-btn{background:var(--btn-dark);color:var(--bone);border:0;
+  border-radius:var(--radius-buttons);padding:12px 14px;
+  font:400 14px/1 var(--font-geist);cursor:pointer}
+
+/* ---------- Hero: 2-column split, left third / right two-thirds ---------- */
+.hero{display:grid;grid-template-columns:1fr 2fr;gap:40px;
+  align-items:start;padding-top:80px}
+.eyebrow{color:var(--pale-stone);margin-bottom:24px;display:flex;align-items:center;gap:8px}
+/* Status Pulse */
+.pulse{width:6px;height:6px;border-radius:50%;background:var(--copper-signal);flex:none}
+h1{font:400 72px/1 var(--font-geist);letter-spacing:-2.88px;color:var(--bone);margin:0}
+.hero p{font:400 16px/1.5 var(--font-geist);color:var(--warm-granite);margin:24px 0 0}
+.hero .btns{display:flex;gap:16px;margin-top:32px}
+
+/* ---------- Dashboard Frame ---------- */
+.frame{background:var(--frame);border-radius:var(--radius-cards);overflow:hidden}
+.frame .bar{display:flex;align-items:center;gap:8px;padding:12px 16px;
+  background:var(--carbon-lift)}
+.dot{width:8px;height:8px;border-radius:50%}
+.frame .bar .title{margin-left:12px;color:var(--pale-stone)}
+.frame .bar .live{margin-left:auto;display:flex;align-items:center;gap:8px;
+  color:var(--pale-stone)}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr)}
+/* Metric Tile */
+.tile{padding:20px;border-top:1px solid var(--carbon-lift);
+  border-left:1px solid var(--carbon-lift)}
+.tile:nth-child(3n+1){border-left:0}
+.tile .lab{color:var(--pale-stone)}
+.tile .val{font:400 36px/1.1 var(--font-geist);letter-spacing:-1.12px;
+  color:var(--bone);margin-top:12px}
+.tile svg{display:block;margin-top:12px}
+
+/* ---------- Logo Strip (Trust Bar) — the four repos ---------- */
+.strip{padding:var(--section-gap) 0;display:flex;gap:48px;flex-wrap:wrap;
+  justify-content:center;color:var(--warm-granite)}
+.strip span{font:400 14px/1 var(--font-geist-mono);letter-spacing:-.02em}
+
+/* ---------- Feature Card Row = one card per map ---------- */
+.sec-head{display:flex;align-items:baseline;gap:16px;margin-bottom:32px}
+.sec-head h2{font:400 44px/1.12 var(--font-geist);letter-spacing:-1.1px;margin:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
+  gap:var(--element-gap)}
+/* card implied by border, never by fill */
+.card{background:transparent;border:1px solid var(--carbon-lift);
+  border-radius:var(--radius-cards);padding:20px}
+.card .cap{color:var(--pale-stone);display:flex;align-items:center;gap:8px}
+.card h3{font:400 20px/1.3 var(--font-geist);letter-spacing:-.031em;
+  color:var(--bone);margin:16px 0 0}
+.card .meta{color:var(--warm-granite);font:400 14px/1.43 var(--font-geist);margin-top:8px}
+.rows{margin-top:20px}
+.row{display:flex;gap:12px;align-items:flex-start;padding:12px 0;
+  border-top:1px solid var(--carbon-lift)}
+.rn{font:400 12px/1.6 var(--font-geist-mono);letter-spacing:-.24px;
+  color:var(--graphite-mid);width:34px;flex:none}
+.rt{font:400 14px/1.43 var(--font-geist);color:var(--bone);flex:1}
+.rb{display:block;color:var(--warm-granite);margin-top:4px;
+  font:400 12px/1.4 var(--font-geist-mono);letter-spacing:-.24px;text-transform:uppercase}
+/* status labels are mono, never coloured fills */
+.st{font:400 12px/1.6 var(--font-geist-mono);letter-spacing:-.24px;
+  text-transform:uppercase;color:var(--warm-granite);white-space:nowrap;flex:none;
+  display:flex;align-items:center;gap:6px}
+.st.live{color:var(--copper-signal)}
+.st.you{color:var(--bone)}
+.st.good{color:var(--teal-metric)}
+.st.off{color:var(--graphite-mid)}
+.more{margin-top:20px;display:inline-block;color:var(--bone);
+  font:400 14px/1 var(--font-geist);border-bottom:1px solid var(--ash-stroke);
+  padding-bottom:6px}
+.more:hover{color:var(--chalk);border-color:var(--chalk)}
+
+/* ---------- Ledger: instrument surface, mono headers ---------- */
+.ledger{width:100%;border-collapse:collapse;margin-top:32px}
+.ledger th{text-align:left;padding:0 16px 12px 0;color:var(--pale-stone);
+  font:400 12px/1 var(--font-geist-mono);letter-spacing:-.24px;text-transform:uppercase;
+  border-bottom:1px solid var(--carbon-lift)}
+.ledger td{padding:16px 16px 16px 0;border-bottom:1px solid var(--carbon-lift);
+  font:400 14px/1.43 var(--font-geist);color:var(--bone);vertical-align:top}
+.ledger td.m{font-family:var(--font-geist-mono);letter-spacing:-.24px;
+  color:var(--warm-granite);font-size:12px;text-transform:uppercase}
+
+/* ---------- CTA Section Card — the single bright figure ---------- */
+.cta{background:var(--bone);border-radius:var(--radius-cards);
+  padding:var(--card-padding);color:var(--obsidian-canvas);max-width:560px;
+  position:relative;overflow:hidden}
+/* film-grain noise overlay, not an illustration */
+.cta::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.055;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter><rect width='120' height='120' filter='url(%23n)'/></svg>")}
+.cta .cap{color:var(--obsidian-canvas);display:flex;align-items:center;gap:8px}
+.cta h2{font:400 36px/1.1 var(--font-geist);letter-spacing:-1.12px;
+  color:var(--obsidian-canvas);margin:16px 0 0}
+.cta ul{list-style:none;margin:24px 0 0;padding:0}
+.cta li{display:flex;gap:12px;padding:10px 0;border-top:1px solid rgba(16,16,16,.14);
+  font:400 14px/1.43 var(--font-geist)}
+.cta li .n{font-family:var(--font-geist-mono);font-size:12px;letter-spacing:-.24px;
+  color:var(--graphite-mid);width:34px;flex:none;line-height:1.6}
+.cta .dark-btn{margin-top:24px;background:var(--obsidian-canvas)}
+
+section{padding-top:var(--section-gap)}
+footer{padding:var(--section-gap) 0 96px}
+footer .h{color:var(--bone);margin-bottom:16px}
+footer p{font:400 14px/1.6 var(--font-geist);color:var(--warm-granite);
+  margin:0;max-width:620px}
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="mark">Caesar</span>
+  <span class="links"><a href="#maps">Maps</a><a href="#ledger">Ledger</a><a href="#queue">Queue</a></span>
+  <span class="right">
+    <span class="mono" id="stamp" style="color:#b8b3b0"></span>
+    <button class="ghost">Status table</button>
+    <button class="light-btn">Sweep now</button>
+  </span>
+</nav>
+
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <div class="eyebrow mono"><span class="pulse"></span>Command centre</div>
+      <h1>Every map, one surface.</h1>
+      <p id="sub"></p>
+      <div class="btns">
+        <button class="dark-btn">Take the next ticket</button>
+        <button class="ghost">Open the map &rarr;</button>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="bar">
+        <span class="dot" style="background:#ff5f57"></span>
+        <span class="dot" style="background:#febc2e"></span>
+        <span class="dot" style="background:#28c840"></span>
+        <span class="title mono">caesar — frontier</span>
+        <span class="live mono"><span class="pulse"></span>live</span>
+      </div>
+      <div class="tiles" id="tiles"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap"><div class="strip" id="strip"></div></div>
+
+<div class="wrap">
+  <section id="maps" style="padding-top:0">
+    <div class="sec-head">
+      <span class="mono" style="color:#b8b3b0">Frontiers</span>
+      <h2>Four maps under way</h2>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section id="queue">
+    <div class="sec-head">
+      <span class="mono" style="color:#b8b3b0">Your queue</span>
+      <h2>What will not move without you</h2>
+    </div>
+    <div class="cta" id="cta"></div>
+  </section>
+
+  <section id="ledger">
+    <div class="sec-head">
+      <span class="mono" style="color:#b8b3b0">Ledger</span>
+      <h2>What the last runs cost</h2>
+    </div>
+    <table class="ledger" id="runs"></table>
+  </section>
+
+  <footer>
+    <div class="h mono">Factory — terminal war room</div>
+    <p id="foot"></p>
+  </footer>
+</div>
+
+<script src="data.js"></script>
+<script>
+// ponytail: template strings + innerHTML. Static prototype, no framework.
+var esc = function(s){return String(s).replace(/[&<>]/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});};
+
+// ponytail: fixed 8-point series per tile, enough to read as a trend line.
+function spark(pts, colour){
+  var max = Math.max.apply(null, pts), min = Math.min.apply(null, pts);
+  var span = (max - min) || 1;
+  var d = pts.map(function(v,i){
+    return (i * (220 / (pts.length - 1))).toFixed(1) + ',' +
+           (40 - ((v - min) / span) * 36).toFixed(1);
+  }).join(' ');
+  return '<svg width="100%" height="40" viewBox="0 0 220 40" preserveAspectRatio="none">' +
+         '<polyline points="' + d + '" fill="none" stroke="' + colour +
+         '" stroke-width="1" vector-effect="non-scaling-stroke"/></svg>';
+}
+
+document.getElementById('stamp').textContent = 'swept ' + G.ago + ' ago';
+document.getElementById('sub').textContent =
+  G.needsRaj + ' of the ' + G.open + ' open tickets want your hands. Caesar holds ' +
+  G.caesarHolds + '. Nothing crosses into main without your word.';
+
+document.getElementById('tiles').innerHTML = [
+  ['open tickets', G.open, [14,16,17,19,20,21,21,21], '--copper-signal'],
+  ['need you', G.needsRaj, [4,5,6,6,8,9,10,10], '--copper-signal'],
+  ['caesar holds', G.caesarHolds, [9,9,10,10,11,11,11,11], '--teal-metric'],
+  ['decided', G.decided, [18,20,22,23,25,26,27,28], '--teal-metric'],
+  ['agent slots', G.slotsUsed + ' / ' + G.slotsCap, [3,4,2,1,3,2,1,0], '--teal-metric'],
+  ['maps driven', G.maps, [1,1,2,2,3,3,4,4], '--teal-metric']
+].map(function(t){
+  var c = getComputedStyle(document.documentElement).getPropertyValue(t[3]).trim();
+  return '<div class="tile"><div class="lab mono">' + t[0] + '</div>' +
+         '<div class="val">' + t[1] + '</div>' + spark(t[2], c) + '</div>';
+}).join('');
+
+document.getElementById('strip').innerHTML = MAPS.map(function(m){
+  return '<span>' + m.repo + ' #' + m.num + '</span>';
+}).join('');
+
+document.getElementById('grid').innerHTML = MAPS.map(function(m){
+  var rows = sorted(m).map(function(t){
+    var state = t[4], owner = t[3];
+    var cls = state === 'Ongoing' ? 'live'
+            : (state === 'Needs you' || owner === 'You') ? 'you'
+            : state === 'Blocked' ? 'off' : 'good';
+    return '<div class="row"><span class="rn">' + t[0] + '</span>' +
+      '<span class="rt"><a href="' + issueUrl(m, t[0]) + '">' + esc(t[1]) + '</a>' +
+      '<span class="rb">' + t[2] + (t[5] ? ' &middot; blocked by ' + t[5] : '') + '</span>' +
+      '</span><span class="st ' + cls + '">' +
+      (state === 'Ongoing' ? '<span class="pulse"></span>' : '') + state + '</span></div>';
+  }).join('');
+  return '<div class="card">' +
+    '<div class="cap mono">Map ' + m.letter + ' &middot; ' + m.repo + ' #' + m.num + '</div>' +
+    '<h3>' + esc(m.title) + '</h3>' +
+    '<div class="meta">' + m.t.length + ' open &middot; ' + m.decided + ' decided' +
+      (m.last ? ' &middot; last was #' + m.last.n + ' ' + esc(m.last.t) : ' &middot; no decisions yet') +
+    '</div><div class="rows">' + rows + '</div>' +
+    '<a class="more" href="https://github.com/' + m.repo + '/issues/' + m.num +
+      '">Open the map &rarr;</a></div>';
+}).join('');
+
+// The one bright object: everything waiting on Raj, pulled onto a light card.
+var mine = [];
+MAPS.forEach(function(m){
+  sorted(m).forEach(function(t){
+    if (t[4] === 'Needs you' || t[3] === 'You') mine.push({ m: m, t: t });
+  });
+});
+document.getElementById('cta').innerHTML =
+  '<div class="cap mono"><span class="pulse"></span>' + mine.length + ' waiting</div>' +
+  '<h2>Nothing here moves until you rule it.</h2>' +
+  '<ul>' + mine.map(function(x){
+    return '<li><span class="n">' + x.t[0] + '</span>' +
+      '<span><a href="' + issueUrl(x.m, x.t[0]) + '">' + esc(x.t[1]) + '</a></span></li>';
+  }).join('') + '</ul>' +
+  '<button class="dark-btn">Take the next one</button>';
+
+document.getElementById('runs').innerHTML =
+  '<thead><tr><th>Run</th><th>Repo</th><th>Result</th><th>Cost</th><th>Turns</th><th>When</th></tr></thead>' +
+  '<tbody>' + G.runs.map(function(r){
+    return '<tr><td class="m">#' + r.n + '</td><td class="m">' + r.repo + '</td>' +
+      '<td><span class="st ' + (r.cls.indexOf('ERROR') === 0 ? 'live' : 'good') + '">' +
+      r.cls + '</span>' + (r.why ? '<span class="rb">' + r.why + '</span>' : '') + '</td>' +
+      '<td>' + r.cost + '</td><td class="m">' + r.turns + '</td>' +
+      '<td class="m">' + r.when + '</td></tr>';
+  }).join('') +
+  '<tr><td class="m">#' + G.pr.n + '</td><td class="m">' + G.pr.repo + '</td>' +
+  '<td><span class="st you">' + (G.pr.draft ? 'draft pr — awaiting your word' : 'ready') +
+  '</span><span class="rb">' + esc(G.pr.t) + '</span></td>' +
+  '<td>&mdash;</td><td class="m">&mdash;</td><td class="m">open</td></tr></tbody>';
+
+document.getElementById('foot').textContent =
+  'Generated ' + G.gen + '. Canvas stays #101010 in every band; the one light card is the ' +
+  'work waiting on you. Two accents only — signal orange for live state, metric green for ' +
+  'settled. No shadows anywhere.';
+</script>
+</body>
+</html>
