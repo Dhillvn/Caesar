@@ -20,10 +20,24 @@
 [CmdletBinding()]
 param(
     [string]$LinkPath = (Join-Path $env:USERPROFILE '.claude\skills\caesar'),
+    # %LOCALAPPDATA%\Microsoft\WindowsApps is on the user PATH by default on Windows 11
+    # and needs no elevation to write, so a .cmd dropped here is a command from any
+    # directory with no PATH edit and no profile edit (issue #184).
+    [string]$ShimPath = (Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps\caesar-centre.cmd'),
     [switch]$Uninstall
 )
 
 $ErrorActionPreference = 'Stop'
+
+function Set-CentreShim {
+    # The shim points at the junction, not at this repo checkout, so it keeps working
+    # when the repo moves. WriteAllText, not Set-Content: the repo's PowerShell rule.
+    $target = Join-Path $LinkPath 'scripts\command-centre.ps1'
+    $body = "@echo off`r`npowershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$target`" %*`r`n"
+    [IO.File]::WriteAllText($ShimPath, $body)
+    Write-Host "Installed: $ShimPath -> $target"
+    Write-Host "Run 'caesar-centre' from any directory to open the command centre; 'caesar-centre stop' to stop it."
+}
 
 $source = Join-Path $PSScriptRoot 'skill'
 if (-not $Uninstall -and -not (Test-Path (Join-Path $source 'SKILL.md'))) {
@@ -34,6 +48,10 @@ $existing = Get-Item -LiteralPath $LinkPath -Force -ErrorAction SilentlyContinue
 $isJunction = $existing -and $existing.LinkType -eq 'Junction'
 
 if ($Uninstall) {
+    if (Test-Path -LiteralPath $ShimPath) {
+        Remove-Item -LiteralPath $ShimPath -Force
+        Write-Host "Uninstalled: removed shim $ShimPath"
+    }
     if (-not $existing) { Write-Host "Not installed: $LinkPath"; return }
     if (-not $isJunction) { throw "REFUSED: $LinkPath is a real directory, not our junction. Delete it yourself if you mean to." }
     [System.IO.Directory]::Delete($LinkPath)
@@ -54,6 +72,7 @@ if ($existing) {
     $targetResolved = if ($target) { (Resolve-Path $target -ErrorAction SilentlyContinue).Path } else { $null }
     if ($targetResolved -and $targetResolved -eq (Resolve-Path $source).Path) {
         Write-Host "Already installed: $LinkPath -> $source"
+        Set-CentreShim
         return
     }
     if ($targetResolved) { Write-Host "Re-pointing existing junction (was: $target)" }
@@ -64,4 +83,5 @@ if ($existing) {
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $LinkPath) | Out-Null
 New-Item -ItemType Junction -Path $LinkPath -Target $source | Out-Null
 Write-Host "Installed: $LinkPath -> $source"
+Set-CentreShim
 Write-Host "Claude Code loads junctioned skills live. Run /caesar <map-url> to check."

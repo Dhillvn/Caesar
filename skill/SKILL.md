@@ -197,8 +197,14 @@ classed from memory is the one that reads as progress:
 
 Whenever he asks — "where are we", "what's left", "status" — run
 `scripts/status.ps1 -MapUrl <url> [<url> ...]` and show the table. That is the whole
-answer; there is no dashboard and no file on Drive, and he should never need GitHub's
-web UI.
+answer in chat, and he should never need GitHub's web UI.
+
+**The command centre** — every driven map on one page, regenerated every 60s at
+`%LOCALAPPDATA%\Caesar\command-centre\index.html` (`C:\Users\rajdh\AppData\Local\Caesar\command-centre\index.html`).
+Raj opens it himself with `caesar-centre` from any directory, and stops it with `caesar-centre
+stop`; name it when he asks for a picture wider than the map you are driving, and never start
+it for him:
+[`scripts/command-centre.ps1`](scripts/command-centre.ps1).
 
 Six facts per open ticket: number, title, type, **Who** (You / Caesar), **State**
 (Blocked → Queued → Ongoing), and blockers when blocked. Rows sort by what needs him.
