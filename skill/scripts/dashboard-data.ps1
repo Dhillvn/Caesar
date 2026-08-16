@@ -42,7 +42,12 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 $sweepScript = Join-Path $PSScriptRoot 'frontier.ps1'
 
 if (-not $MapUrl) {
-    $found = gh search issues --owner Dhillvn --label wayfinder:map --label caesar:driving --json url
+    # --state open is load-bearing: `gh search issues` searches every state by default,
+    # so a closed map that still carries caesar:driving is discovered and rendered as a
+    # live map. numen-ops#35 did exactly that - closed 2026-07-31, still labelled, still
+    # on the board six weeks later. The label is the claim, but the issue's state outranks
+    # it: a closed map is never being driven, whatever its labels say.
+    $found = gh search issues --owner Dhillvn --label wayfinder:map --label caesar:driving --state open --json url
     if ($LASTEXITCODE -ne 0) { throw "gh search issues failed" }
     $MapUrl = @(($found | ConvertFrom-Json) | ForEach-Object { $_.url })
 }
