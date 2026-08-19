@@ -130,6 +130,26 @@ end {
         return $out
     }
 
+    # The decided tickets, behind the same disclosure the blocked ones use. They are the
+    # map's whole history, so the card would be unreadable with them open by default -
+    # and closed they cost one line. This is the whole reason Raj had to open GitHub.
+    function Decided-Html($map) {
+        $decided = @($map.Decided)
+        if ($decided.Count -eq 0) { return '' }
+        $rows = ($decided | ForEach-Object {
+            $when = if ($_.ClosedAt) { (Format-When $_.ClosedAt) } else { '&mdash;' }
+            '<div class="row drow">' +
+            "<a class=`"hit`" href=`"$($_.Url)`" aria-label=`"$(Esc $_.Title)`"></a>" +
+            "<span class=`"gl c-teal`">$([char]0x2713)</span>" +
+            "<span class=`"rn c-teal`">$($_.Number)</span>" +
+            "<span class=`"rt`"><a href=`"$($_.Url)`">$(Esc $_.Title)</a></span>" +
+            "<span class=`"col`">$(Esc $_.Type)</span>" +
+            "<span class=`"col`">$when</span></div>"
+        }) -join ''
+        return "<details class=`"blocked decided`"><summary>$($decided.Count) decided &mdash; show</summary>" +
+            '<div class="rows grp">' + $rows + '</div></details>'
+    }
+
     $maps = @($data.Maps)
 
     function Card-Html($map) {
@@ -148,7 +168,9 @@ end {
             '<span class="dot" style="background:#28c840"></span>' +
             "<span class=`"num`"><span class=`"hash`">#</span>$($map.Number)</span>" +
             "<span class=`"t`">$title</span>" +
-            "<span class=`"right`"><span class=`"repo`">$(Esc $map.Repo)</span>$live</span>" +
+            "<span class=`"right`">" +
+            "<button class=`"cpy mono`" type=`"button`" data-copy=`"$(Esc $map.Url)`" title=`"Copy the map URL`">copy url</button>" +
+            "<span class=`"repo`">$(Esc $map.Repo)</span>$live</span>" +
             '</div>' +
             '<div class="cbody">' +
             '<div class="chead">' +
@@ -158,6 +180,7 @@ end {
             '</div>' +
             "<div class=`"meta`">$($tickets.Count) open &middot; $blockedCt blocked &middot; $($map.DoneCount) decided</div>" +
             (Body-Html $map) +
+            (Decided-Html $map) +
             "<a class=`"more`" href=`"$($map.Url)`"><span>Open the map &rarr;</span></a>" +
             '</div></div>'
     }
@@ -196,7 +219,8 @@ end {
             $mapTitle = if ($mapTitleOf.ContainsKey($mapNum)) { Esc $mapTitleOf[$mapNum] } else { '' }
             $gateItems += "<div class=`"gmap`"><span class=`"gnum`">#$mapNum</span><span class=`"gt`">$mapTitle</span></div><ul>"
             foreach ($p in ($prs | Where-Object { $_.Map -eq $mapNum })) {
-                $sub = if ($p.ClosesTicket) { "closes #$($p.ClosesTicket) &middot; " } else { '' }
+                $sub = "$(Esc $p.Repo) &middot; "
+                if ($p.ClosesTicket) { $sub += "closes #$($p.ClosesTicket) &middot; " }
                 $sub += $(if ($p.Draft) { 'draft' } else { 'ready' })
                 $sub += " &middot; $(Format-Ago $p.AgeSeconds) old"
                 $gateItems += "<li><span class=`"n`">#$($p.Number)</span><span>" +
@@ -209,7 +233,8 @@ end {
         if ($unmapped.Count -gt 0) {
             $gateItems += '<div class="gmap"><span class="gnum">&mdash;</span><span class="gt">no map found for this PR&#39;s ticket</span></div><ul>'
             foreach ($p in $unmapped) {
-                $sub = $(if ($p.Draft) { 'draft' } else { 'ready' }) + " &middot; $(Format-Ago $p.AgeSeconds) old"
+                $sub = "$(Esc $p.Repo) &middot; " + $(if ($p.Draft) { 'draft' } else { 'ready' }) +
+                    " &middot; $(Format-Ago $p.AgeSeconds) old"
                 $gateItems += "<li><span class=`"n`">#$($p.Number)</span><span>" +
                     "<a href=`"$($p.Url)`">$(Esc $p.Title)</a>" +
                     "<span class=`"sub`">$sub</span></span></li>"
@@ -265,7 +290,7 @@ end {
 <head>
 <meta charset="utf-8">
 <meta http-equiv="refresh" content="30">
-<title>Caesar — command centre</title>
+<title>Caesar &mdash; command centre</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
@@ -358,6 +383,15 @@ details.blocked summary{cursor:pointer;list-style:none;color:var(--graphite-mid)
   font:400 12px/1.6 var(--font-geist-mono);letter-spacing:-.24px;text-transform:uppercase}
 details.blocked summary::-webkit-details-marker{display:none}
 details.blocked summary:hover{color:var(--warm-granite)}
+details.decided summary{color:var(--teal-metric);opacity:.75}
+details.decided summary:hover{color:var(--teal-metric);opacity:1}
+.row.drow{grid-template-columns:18px 52px 1fr 104px 150px}
+.cpy{appearance:none;background:transparent;border:1px solid var(--ash-stroke);
+  border-radius:var(--radius-buttons);color:var(--warm-granite);cursor:pointer;
+  padding:4px 8px;font:400 12px/1 var(--font-geist-mono);letter-spacing:-.24px;
+  text-transform:uppercase}
+.cpy:hover{color:var(--bone);border-color:var(--warm-granite)}
+.cpy.ok{color:var(--teal-metric);border-color:var(--teal-metric)}
 .more{margin-top:20px;display:inline-block;color:var(--bone);font:400 14px/1 var(--font-geist)}
 .more span{border-bottom:1px solid var(--ash-stroke);padding-bottom:6px}
 .more:hover span{color:var(--chalk);border-color:var(--chalk)}
@@ -475,6 +509,40 @@ $banner
     <div class="foot-note mono">Generated $genStr &middot; Factory, with Numen's two accents &middot; read-only, links out to GitHub</div>
   </footer>
 </div>
+<script>
+/* The page's only script. It reads nothing and renders nothing - every value above is
+   still baked in at render time (see .DESCRIPTION) - it exists so the map URL reaches
+   the clipboard in one click instead of a right-click through the "Open the map" link.
+   navigator.clipboard is undefined on some file:// origins, hence the execCommand
+   fallback; the page is opened from %LOCALAPPDATA%, not over http. */
+document.addEventListener('click', function (e) {
+  var b = e.target.closest ? e.target.closest('.cpy') : null;
+  if (!b) return;
+  e.preventDefault();
+  var text = b.getAttribute('data-copy');
+  var done = function () {
+    var was = b.textContent;
+    b.textContent = 'copied';
+    b.classList.add('ok');
+    setTimeout(function () { b.textContent = was; b.classList.remove('ok'); }, 1200);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done, function () { fallback(text, done); });
+  } else {
+    fallback(text, done);
+  }
+  function fallback(t, ok) {
+    var ta = document.createElement('textarea');
+    ta.value = t;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); ok(); } catch (err) { b.textContent = 'copy failed'; }
+    document.body.removeChild(ta);
+  }
+});
+</script>
 </body>
 </html>
 "@
