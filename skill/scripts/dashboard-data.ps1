@@ -74,16 +74,24 @@ $maps = foreach ($url in $MapUrl) {
         $lastDecided = if ($done.Count -gt 0) {
             [pscustomobject]@{ Number = $done[-1].Number; Title = $done[-1].Title; Url = $done[-1].Url }
         } else { $null }
+        # The whole decided list, newest first, so the page can show them without a trip
+        # to GitHub. $done is ascending by ClosedAt; the dropdown reads most-recent-first.
+        $decided = @($done | Sort-Object ClosedAt -Descending | ForEach-Object {
+            [pscustomobject]@{
+                Number = $_.Number; Title = $_.Title; Url = $_.Url
+                Type = $_.Type; ClosedAt = $_.ClosedAt
+            }
+        })
 
         [pscustomobject]@{
             Number = $mapNum; Title = $rows[0].MapTitle; Repo = $repo; Url = $url
             DoneCount = $done.Count; OpenCount = $open.Count
-            LastDecided = $lastDecided; OpenTickets = $open; Error = $null
+            LastDecided = $lastDecided; Decided = $decided; OpenTickets = $open; Error = $null
         }
     } catch {
         [pscustomobject]@{
             Number = $mapNum; Title = $null; Repo = $repo; Url = $url
-            DoneCount = 0; OpenCount = 0; LastDecided = $null; OpenTickets = @()
+            DoneCount = 0; OpenCount = 0; LastDecided = $null; Decided = @(); OpenTickets = @()
             Error = $_.Exception.Message
         }
     }
@@ -94,22 +102,35 @@ $slots = @($maps | ForEach-Object { $_.OpenTickets } | Where-Object { $_.Who -eq
 
 # ticket -> owning map number, so a PR's closing issue can be traced back to its
 # Dashboard Frame (#183: the gate groups PRs under the map they belong to).
+# Decided tickets are in the table too: a PR routinely lands against a ticket that is
+# already closed, and a table of open tickets alone answers "no map found" for it.
 $ticketMap = @{}
 foreach ($m in $maps) {
     foreach ($t in $m.OpenTickets) { $ticketMap[$t.Number] = $m.Number }
+    foreach ($t in $m.Decided) { $ticketMap[$t.Number] = $m.Number }
 }
 
 $repos = @($maps | Where-Object { $_.Repo } | ForEach-Object { $_.Repo } | Select-Object -Unique)
 $prs = foreach ($r in $repos) {
-    $json = gh pr list --repo $r --state open --json number,title,url,isDraft,createdAt,closingIssuesReferences
+    $json = gh pr list --repo $r --state open --json number,title,url,isDraft,createdAt,headRefName,closingIssuesReferences
     if ($LASTEXITCODE -ne 0) { throw "gh pr list failed for $r" }
     foreach ($pr in ($json | ConvertFrom-Json)) {
+        # closingIssuesReferences is populated only by a bare closing keyword - "Closes #71".
+        # Every Caesar PR body links its ticket inside a sentence ("Closes the funnel opened
+        # by [#71](...)"), which GitHub does not parse, so the array is empty on all of them
+        # and every PR rendered as "no map found for this PR's ticket". The branch name is
+        # the reliable carrier: spawn-ticket-agent.ps1 names every centurion branch
+        # ticket-<n>-<slug>.
         $closes = @($pr.closingIssuesReferences) | Select-Object -First 1
-        $ticket = if ($closes) { $closes.number } else { $null }
+        $ticket = if ($closes) {
+            $closes.number
+        } elseif ($pr.headRefName -match '^ticket-(\d+)(-|$)') {
+            [int]$Matches[1]
+        } else { $null }
         $mapNum = if ($ticket -and $ticketMap.ContainsKey($ticket)) { $ticketMap[$ticket] } else { $null }
         [pscustomobject]@{
             Number = $pr.number; Title = $pr.title; Url = $pr.url; Repo = $r; Draft = $pr.isDraft
-            ClosesTicket = $ticket; Map = $mapNum
+            Branch = $pr.headRefName; ClosesTicket = $ticket; Map = $mapNum
             AgeSeconds = [int](New-TimeSpan -Start ([datetime]$pr.createdAt) -End (Get-Date).ToUniversalTime()).TotalSeconds
         }
     }
