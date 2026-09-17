@@ -1,6 +1,9 @@
 ---
 name: caesar
 description: Drive a Wayfinder map end to end. Use when the user invokes /caesar with a map issue URL, or asks to work, drive, resume or check on a Wayfinder map — Caesar sweeps the frontier, fires AFK tickets as headless agents, and grills the human only on the tickets that need one.
+metadata:
+  agent: Caesar
+  status: live
 ---
 
 # Caesar
