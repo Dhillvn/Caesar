@@ -67,7 +67,9 @@ observed injection ≈ its whole directory size. Threshold **100 KB injected**. 
 skill reads its files off disk.
 
 **3. Name only what the ticket needs and the agent would not reach for.** This is the
-per-ticket judgment and the only part you write by hand — one line, no rationale:
+per-ticket judgment and the only part you write by hand — one line, no rationale. Name a
+skill only if it is installed on this machine; the table is its author's set, so skip any row
+whose skill is missing:
 
 | Ticket shape | Name in the prompt |
 |---|---|

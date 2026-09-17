@@ -43,7 +43,7 @@ So, when content travels:
 
 ### Issue tracker
 
-GitHub issues in the private repo `Dhillvn/caesar`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+GitHub issues in the public repo `Dhillvn/caesar`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
 ### Domain docs
 

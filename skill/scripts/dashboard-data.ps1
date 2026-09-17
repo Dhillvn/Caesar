@@ -47,7 +47,10 @@ if (-not $MapUrl) {
     # live map. numen-ops#35 did exactly that - closed 2026-07-31, still labelled, still
     # on the board six weeks later. The label is the claim, but the issue's state outranks
     # it: a closed map is never being driven, whatever its labels say.
-    $found = gh search issues --owner Dhillvn --label wayfinder:map --label caesar:driving --state open --json url
+    # The owner is whoever gh is logged in as, so a fork searches its own maps.
+    $owner = gh api user --jq .login
+    if ($LASTEXITCODE -ne 0 -or -not $owner) { throw "gh api user failed - run 'gh auth login'" }
+    $found = gh search issues --owner $owner --label wayfinder:map --label caesar:driving --state open --json url
     if ($LASTEXITCODE -ne 0) { throw "gh search issues failed" }
     $MapUrl = @(($found | ConvertFrom-Json) | ForEach-Object { $_.url })
 }

@@ -44,6 +44,28 @@ if (-not $Uninstall -and -not (Test-Path (Join-Path $source 'SKILL.md'))) {
     throw "No SKILL.md at $source  -  run this from the Caesar repo root."
 }
 
+if (-not $Uninstall) {
+    # Warn, never block: a missing prerequisite is fixable after install, and the
+    # junction itself does not need any of these.
+    $missing = @()
+    foreach ($cmd in 'git', 'gh', 'claude') {
+        if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) { $missing += "'$cmd' is not on PATH." }
+    }
+    if (Get-Command gh -ErrorAction SilentlyContinue) {
+        gh auth status *> $null
+        if ($LASTEXITCODE -ne 0) { $missing += "gh is not logged in - run: gh auth login" }
+    }
+    if (Get-Command claude -ErrorAction SilentlyContinue) {
+        $wayfinder = claude plugin list --json 2>$null | ConvertFrom-Json |
+            ForEach-Object { Get-ChildItem (Join-Path $_.installPath 'skills') -Recurse -Filter SKILL.md -ErrorAction SilentlyContinue } |
+            Where-Object { $_.Directory.Name -eq 'wayfinder' }
+        if (-not $wayfinder) {
+            $missing += "The Wayfinder skill is not installed - run:`n    claude plugin marketplace add mattpocock/skills`n    claude plugin install mattpocock-skills@mattpocock"
+        }
+    }
+    foreach ($m in $missing) { Write-Warning $m }
+}
+
 $existing = Get-Item -LiteralPath $LinkPath -Force -ErrorAction SilentlyContinue
 $isJunction = $existing -and $existing.LinkType -eq 'Junction'
 

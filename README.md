@@ -1,22 +1,72 @@
 # Caesar
 
-An orchestrator layer on top of the Wayfinder workflow. Raj talks to one session; Caesar drives the map's tickets, running AFK work itself and pulling the human in only for prototype and grilling tickets.
+A Claude Code skill that drives a [Wayfinder](https://github.com/mattpocock/skills) map
+for you. You talk to one session; Caesar works through the map's tickets, running the
+hands-off ones itself as background agents and pulling you in only for the tickets that
+need a human (grilling and prototype work).
+
+## Before you install
+
+Caesar is **Windows-only** (PowerShell scripts, Windows junctions). You need:
+
+- [Claude Code](https://claude.com/claude-code), with the `claude` command on your PATH
+- [Git](https://git-scm.com/)
+- [GitHub CLI](https://cli.github.com/), logged in: `gh auth login`
+- The Wayfinder skill, from Matt Pocock's plugin:
+  ```powershell
+  claude plugin marketplace add mattpocock/skills
+  claude plugin install mattpocock-skills@mattpocock
+  ```
+- PowerShell allowed to run local scripts (one time, no admin needed):
+  ```powershell
+  Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+  ```
+
+The installer checks these and warns about anything missing.
+
+> **Read this before your first run.** Caesar launches background agents with
+> `--permission-mode bypassPermissions`: they run commands without asking you. A short
+> deny list blocks merging, force-pushing, `rm -rf` and reading credentials, and each
+> agent works in its own git worktree, but Claude Code has no sandbox on Windows. Each
+> agent is capped at $5 of API spend by default, and up to 4 run at once. Try it on a
+> throwaway repo first.
 
 ## Install
 
 ```powershell
+git clone https://github.com/Dhillvn/caesar.git
+cd caesar
 .\install.ps1
 ```
 
-Junctions `~\.claude\skills\caesar` onto `skill\` in this repo. No admin needed, no
-restart needed — Claude Code loads a junctioned skill live. Idempotent; re-run it after
-moving the repo. `.\install.ps1 -Uninstall` removes the junction.
+This links `~\.claude\skills\caesar` to the `skill\` folder in your clone, so a `git pull`
+updates Caesar with no reinstall. It also adds a `caesar-centre` command. No admin rights
+and no restart needed. It is safe to run again; run it again if you move the folder.
 
-Then, from inside whichever repo owns the map:
+To remove it: `.\install.ps1 -Uninstall`.
+
+## Use
+
+From inside the repo that owns the map, in Claude Code:
 
 ```
 /caesar https://github.com/<owner>/<repo>/issues/<map-number>
 ```
+
+No map yet? `/caesar <your idea in a sentence>` charts one first.
+
+- `status` in the session shows where every ticket stands.
+- `caesar-centre` (any terminal) opens a live dashboard of every map you are driving;
+  `caesar-centre stop` stops it. It finds maps owned by your GitHub login that carry the
+  `caesar:driving` label.
+- Nothing reaches your `main` branch without your say-so: work lands as pull requests,
+  and Caesar merges only when you tell it to.
+
+**Optional — run log on your phone.** Create a secret gist, then set its id once:
+`setx CAESAR_GIST_ID <gist-id>`. Without it, run logs stay local.
+
+The skill was written by its author for himself, so it calls the user "Raj". It works the
+same for anyone.
 
 ## Layout
 

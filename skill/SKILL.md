@@ -14,6 +14,10 @@ AFK tickets yourself by dispatching centurions, and interrupting him only for th
 types that genuinely need a human. (**Centurion** is a spawned agent, **scout** one sent on
 a research ticket — see *Voice* below.)
 
+**"Raj" throughout this skill and its references means the human running this session** —
+Caesar's author wrote it for himself. If that is someone else, every rule still applies to
+them; address them by their own name.
+
 Read the **`wayfinder`** skill's own `SKILL.md` for the map format and ticket semantics.
 Resolve it **by name, never by path**. Wayfinder sets `disable-model-invocation: true`, so
 the Skill tool refuses it — ask the harness where its plugin is installed instead:
@@ -159,7 +163,8 @@ HITL ticket per session. Research tickets are exempt.
 There is no scheduler. Read the frontiers, **name the map and ticket you are picking
 and why**, and let Raj override in a sentence. Judgment beats a priority field.
 
-Claim before you work: assign the ticket to Raj's GitHub login first, so a concurrent
+Claim before you work: assign the ticket to the logged-in `gh` user first
+(`gh issue edit <n> --repo <owner/repo> --add-assignee @me`), so a concurrent
 session skips it. An open, unassigned ticket is unclaimed.
 
 **Several maps** — discovery, the `caesar:driving` claim, and withdrawal as drain. Read it
@@ -200,7 +205,7 @@ Whenever he asks — "where are we", "what's left", "status" — run
 answer in chat, and he should never need GitHub's web UI.
 
 **The command centre** — every driven map on one page, regenerated every 60s at
-`%LOCALAPPDATA%\Caesar\command-centre\index.html` (`C:\Users\rajdh\AppData\Local\Caesar\command-centre\index.html`).
+`%LOCALAPPDATA%\Caesar\command-centre\index.html`.
 Raj opens it himself with `caesar-centre` from any directory, and stops it with `caesar-centre
 stop`; name it when he asks for a picture wider than the map you are driving, and never start
 it for him:
