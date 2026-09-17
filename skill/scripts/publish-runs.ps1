@@ -132,10 +132,13 @@ function Format-Run($RunDir, $Stem) {
 
 function Format-Repo($RepoName, $RunDir) {
     $stems = @(Get-ChildItem -LiteralPath $RunDir -Filter '*.json' -File |
-        Where-Object { $_.Name -notlike '*.dispatch.json' } |
+        Where-Object { $_.Name -notlike '*.dispatch.json' -and $_.BaseName -match '-\d{8}-\d{6}$' } |
         ForEach-Object { $_.BaseName } |
         Sort-Object { [regex]::Match($_, '(\d{8}-\d{6})$').Value } -Descending |
         Select-Object -First $Cap)
+
+    # A repo whose run directory holds no runs has nothing to render.
+    if (-not $stems) { return $null }
 
     $blocks = @($stems | ForEach-Object { ,(Format-Run $RunDir $_) })
     $newestTs = [regex]::Match($stems[0], '(\d{8})-(\d{6})$')
@@ -163,6 +166,7 @@ $desired = @{}
 foreach ($repo in $repoDirs) {
     $fileName = "$($repo.Name).md"
     $content = Format-Repo $repo.Name $repo.RunDir
+    if (-not $content) { continue }
     $path = Join-Path $tmp $fileName
     [IO.File]::WriteAllText($path, $content, (New-Object System.Text.UTF8Encoding $false))
     $desired[$fileName] = $path
