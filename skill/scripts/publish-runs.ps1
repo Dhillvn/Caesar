@@ -9,8 +9,8 @@
   files in each by stem (`<name>-<yyyyMMdd>-<HHmmss>`), classifies each stem RUNNING /
   LANDED / LANDED (no GIST) / ERRORED from its result JSON (mirrors watch-runs.ps1's
   classifier), and writes one `<repo>.md` per directory to the gist whose id is read
-  from `caesar\.claude\caesar-runs\.gist-id` (falls back to the known id if that file
-  is missing).
+  from `caesar\.claude\caesar-runs\.gist-id`, else from $env:CAESAR_GIST_ID. With
+  neither, it skips publishing and exits cleanly.
 
   Every timestamp in the render comes from the run data itself, never the clock, so
   two consecutive runs over unchanged directories produce byte-identical gist content
@@ -31,7 +31,13 @@ $ErrorActionPreference = 'Stop'
 if (-not $GistId) {
     $idFile = Join-Path $ProjectsRoot 'caesar\.claude\caesar-runs\.gist-id'
     $GistId = if (Test-Path -LiteralPath $idFile) { ([IO.File]::ReadAllText($idFile)).Trim() }
-              else { '12fdf235c41ddc3f74a4847bdb89dc8c' }
+              else { $env:CAESAR_GIST_ID }
+}
+# The gist is optional. No id means this machine never set one up - skip, don't fail
+# the harvest that called us.
+if (-not $GistId) {
+    Write-Host "publish-runs: no gist configured (set CAESAR_GIST_ID or write $idFile) - skipped."
+    return
 }
 
 function Get-StderrTail([string]$ErrFile) {

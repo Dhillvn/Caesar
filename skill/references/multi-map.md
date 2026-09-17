@@ -9,10 +9,11 @@ A map is yours only while its issue carries **`caesar:driving`**. Discovery is o
 command:
 
 ```
-gh search issues --owner Dhillvn --label wayfinder:map --label caesar:driving --state open
+gh search issues --owner "$(gh api user --jq .login)" --label wayfinder:map --label caesar:driving --state open
 ```
 
-`--owner` is mandatory — a label-only search returns twenty strangers' public maps.
+`--owner` is mandatory — a label-only search returns twenty strangers' public maps. It is
+the logged-in `gh` user; a map in an organisation needs `--owner <org>` instead.
 
 `--state open` is mandatory too, and for a subtler reason: the search covers **every**
 state by default, so a map closed by hand while still carrying `caesar:driving` comes back
