@@ -83,3 +83,7 @@ same for anyone.
 
 The three scripts are **frozen** because each is a command whose safety is a flag that
 improvisation can silently drop. Judgment stays prose; these do not.
+
+## License
+
+MIT - see [LICENSE](LICENSE).
