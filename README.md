@@ -5,6 +5,42 @@ for you. You talk to one session; Caesar works through the map's tickets, runnin
 hands-off ones itself as background agents and pulling you in only for the tickets that
 need a human (grilling and prototype work).
 
+## Quickest setup: let Claude Code do it
+
+Open Claude Code and paste:
+
+```
+Set up Caesar for me: https://github.com/Dhillvn/caesar
+```
+
+### Instructions for Claude Code
+
+If you are Claude Code setting Caesar up for a user, follow these steps in order:
+
+1. **Check the platform.** Caesar runs on Windows only. On any other OS, stop and tell the
+   user.
+2. **Clone to a permanent folder:** `git clone https://github.com/Dhillvn/caesar.git
+   "$env:USERPROFILE\caesar"`. The install links to this folder, so never clone into a
+   temp or session directory. If the folder already exists, run
+   `git -C "$env:USERPROFILE\caesar" pull` instead.
+3. **Script permission.** Run `Get-ExecutionPolicy`. If it returns `Restricted` or
+   `AllSigned`, ask the user, then run
+   `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force`. Caesar's scripts cannot
+   run without it.
+4. **Install:** `powershell -NoProfile -ExecutionPolicy Bypass -File
+   "$env:USERPROFILE\caesar\install.ps1"`.
+5. **Fix every warning it prints, then run step 4 again until there are none:**
+   - Git or GitHub CLI missing: ask the user, then run
+     `winget install --id Git.Git -e` or `winget install --id GitHub.cli -e`. Installing
+     changes PATH, so the user may need to restart Claude Code.
+   - GitHub CLI not logged in: this login is interactive, so you cannot do it. Ask the
+     user to type `! gh auth login` in the prompt.
+   - Wayfinder missing: run `claude plugin marketplace add mattpocock/skills`, then
+     `claude plugin install mattpocock-skills@mattpocock`.
+6. **Hand over.** Show the user the safety note under *Before you install*, then tell
+   them to start with `/caesar <map-issue-url>`, or `/caesar <an idea>` to chart a new
+   map. If `/caesar` is not recognised, restart Claude Code.
+
 ## Before you install
 
 Caesar is **Windows-only** (PowerShell scripts, Windows junctions). You need:
